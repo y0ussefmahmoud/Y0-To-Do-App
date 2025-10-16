@@ -373,6 +373,16 @@ class EnhancedHomeScreen extends ConsumerWidget {
                           fontSize: 12,
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${task.dueDate!.hour.toString().padLeft(2, '0')}:${task.dueDate!.minute.toString().padLeft(2, '0')}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -557,8 +567,8 @@ class EnhancedHomeScreen extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.calendar_today),
                   title: Text(selectedDate == null 
-                    ? 'تاريخ الاستحقاق (اختياري)' 
-                    : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}'),
+                    ? 'تاريخ ووقت الاستحقاق (اختياري)' 
+                    : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year} - ${selectedDate!.hour.toString().padLeft(2, '0')}:${selectedDate!.minute.toString().padLeft(2, '0')}'),
                   trailing: selectedDate != null 
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -572,14 +582,38 @@ class EnhancedHomeScreen extends ConsumerWidget {
                   onTap: () async {
                     final date = await showDatePicker(
                       context: context,
-                      initialDate: DateTime.now(),
+                      initialDate: selectedDate ?? DateTime.now(),
                       firstDate: DateTime.now(),
                       lastDate: DateTime.now().add(const Duration(days: 365)),
                     );
                     if (date != null) {
-                      setState(() {
-                        selectedDate = date;
-                      });
+                      // Show time picker after date picker
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(selectedDate ?? DateTime.now()),
+                      );
+                      if (time != null) {
+                        setState(() {
+                          selectedDate = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            time.hour,
+                            time.minute,
+                          );
+                        });
+                      } else {
+                        // If user cancels time picker, use default time (current time)
+                        setState(() {
+                          selectedDate = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            DateTime.now().hour,
+                            DateTime.now().minute,
+                          );
+                        });
+                      }
                     }
                   },
                 ),
@@ -739,8 +773,8 @@ class EnhancedHomeScreen extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.calendar_today),
                   title: Text(selectedDate == null 
-                    ? 'تاريخ الاستحقاق' 
-                    : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}'),
+                    ? 'تاريخ ووقت الاستحقاق' 
+                    : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year} - ${selectedDate!.hour.toString().padLeft(2, '0')}:${selectedDate!.minute.toString().padLeft(2, '0')}'),
                   trailing: selectedDate != null 
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -759,9 +793,33 @@ class EnhancedHomeScreen extends ConsumerWidget {
                       lastDate: DateTime.now().add(const Duration(days: 365)),
                     );
                     if (date != null) {
-                      setState(() {
-                        selectedDate = date;
-                      });
+                      // Show time picker after date picker
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(selectedDate ?? DateTime.now()),
+                      );
+                      if (time != null) {
+                        setState(() {
+                          selectedDate = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            time.hour,
+                            time.minute,
+                          );
+                        });
+                      } else {
+                        // If user cancels time picker, use default time (current time)
+                        setState(() {
+                          selectedDate = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            DateTime.now().hour,
+                            DateTime.now().minute,
+                          );
+                        });
+                      }
                     }
                   },
                 ),
