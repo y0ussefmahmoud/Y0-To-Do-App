@@ -5,10 +5,38 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/ai_provider.dart';
 import '../services/speech_service.dart';
 
+/// زر الإدخال الصوتي
+/// 
+/// يوفر واجهة للتعرف على الصوت ومعالجة الأوامر الصوتية
+/// 
+/// الميزات:
+/// - التعرف على الصوت باللغة العربية
+/// - معالجة الأوامر الصوتية
+/// - رسوم متحركة أثناء الاستماع
+/// - قراءة تأكيد الأمر
+/// 
+/// مثال على الاستخدام:
+/// ```dart
+/// VoiceInputButton(
+///   onTextReceived: (text) {
+///     print('تم التعرف على: $text');
+///   },
+///   onCommandReceived: (command) {
+///     // معالجة الأمر
+///   },
+/// )
+/// ```
 class VoiceInputButton extends ConsumerStatefulWidget {
+  /// دالة يتم استدعاؤها عند التعرف على النص
   final Function(String)? onTextReceived;
+  
+  /// دالة يتم استدعاؤها عند معالجة أمر صوتي
   final Function(VoiceCommand)? onCommandReceived;
+  
+  /// نص التلميح عند التحويم على الزر
   final String? tooltip;
+  
+  /// هل الزر بحجم مصغر؟
   final bool isCompact;
 
   const VoiceInputButton({
@@ -63,6 +91,9 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton> {
     );
   }
 
+  /// معالجة الضغط على زر الصوت
+  /// 
+  /// يبدأ أو يوقف الاستماع حسب الحالة
   Future<void> _handleVoiceInput(VoiceNotifier voiceNotifier) async {
     final voiceState = ref.read(voiceProvider);
     
@@ -82,6 +113,9 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton> {
     );
   }
 
+  /// إظهار نافذة حوارية أثناء الاستماع
+  /// 
+  /// تعرض مؤشر تحميل وأمثلة على الأوامر
   void _showVoiceDialog() {
     showDialog(
       context: context,
@@ -121,6 +155,10 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton> {
     );
   }
 
+  /// معالجة نتيجة التعرف على الصوت
+  /// 
+  /// [text] النص الذي تم التعرف عليه
+  /// [voiceNotifier] مدير حالة الصوت
   void _handleVoiceResult(String text, VoiceNotifier voiceNotifier) {
     if (text.isEmpty) return;
 
@@ -147,6 +185,9 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton> {
     _speakConfirmation(command);
   }
 
+  /// قراءة تأكيد الأمر بصوت عالٍ
+  /// 
+  /// [command] الأمر الذي تم تنفيذه
   void _speakConfirmation(VoiceCommand command) {
     String confirmation = '';
     
@@ -174,9 +215,25 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton> {
   }
 }
 
-// Compact version for use in text fields
+/// نسخة مصغرة من زر الصوت
+/// 
+/// مثالية للاستخدام داخل حقول النص
+/// 
+/// مثال:
+/// ```dart
+/// TextField(
+///   decoration: InputDecoration(
+///     suffixIcon: CompactVoiceButton(
+///       onTextReceived: (text) => controller.text = text,
+///     ),
+///   ),
+/// )
+/// ```
 class CompactVoiceButton extends ConsumerWidget {
+  /// دالة يتم استدعاؤها عند التعرف على النص
   final Function(String) onTextReceived;
+  
+  /// نص التلميح
   final String? tooltip;
 
   const CompactVoiceButton({

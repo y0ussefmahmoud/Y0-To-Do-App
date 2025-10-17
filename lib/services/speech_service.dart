@@ -2,18 +2,50 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+/// خدمة التعرف على الصوت وتحويل النص إلى كلام
+/// 
+/// توفر وظائف:
+/// - التعرف على الصوت (Speech to Text)
+/// - تحويل النص إلى كلام (Text to Speech)
+/// - معالجة الأوامر الصوتية
+/// 
+/// يستخدم Singleton Pattern لضمان instance واحد فقط
+/// يدعم اللغة العربية (ar-SA)
 class SpeechService {
   static final SpeechService _instance = SpeechService._internal();
+  
+  /// Factory constructor يرجع نفس الـ instance
   factory SpeechService() => _instance;
+  
+  /// Private constructor لل Singleton
   SpeechService._internal();
 
+  /// محرك التعرف على الصوت
   final SpeechToText _speechToText = SpeechToText();
+  
+  /// محرك تحويل النص إلى كلام
   final FlutterTts _flutterTts = FlutterTts();
   
+  /// هل تم تهيئة الخدمة؟
   bool _isInitialized = false;
+  
+  /// هل الخدمة تستمع حالياً؟
   bool _isListening = false;
 
-  // تهيئة الخدمة
+  /// تهيئة خدمة التعرف على الصوت
+  /// 
+  /// يطلب إذن الميكروفون ويهيئ محركات STT و TTS
+  /// 
+  /// Returns: true إذا نجحت التهيئة، false إذا فشلت
+  /// 
+  /// مثال:
+  /// ```dart
+  /// final service = SpeechService();
+  /// final success = await service.initialize();
+  /// if (success) {
+  ///   print('تم التهيئة بنجاح');
+  /// }
+  /// ```
   Future<bool> initialize() async {
     if (_isInitialized) return true;
 
@@ -44,7 +76,21 @@ class SpeechService {
     }
   }
 
-  // بدء الاستماع
+  /// بدء الاستماع للإدخال الصوتي
+  /// 
+  /// [onResult] دالة يتم استدعاؤها عند التعرف على النص النهائي
+  /// [onError] دالة يتم استدعاؤها عند حدوث خطأ
+  /// 
+  /// يستمع لمدة 30 ثانية كحد أقصى
+  /// يتوقف تلقائياً بعد 3 ثواني من الصمت
+  /// 
+  /// مثال:
+  /// ```dart
+  /// await service.startListening(
+  ///   onResult: (text) => print('تم التعرف على: $text'),
+  ///   onError: (error) => print('خطأ: $error'),
+  /// );
+  /// ```
   Future<void> startListening({
     required Function(String) onResult,
     required Function(String) onError,
@@ -79,7 +125,9 @@ class SpeechService {
     }
   }
 
-  // إيقاف الاستماع
+  /// إيقاف الاستماع
+  /// 
+  /// يوقف محرك التعرف على الصوت
   Future<void> stopListening() async {
     if (!_isListening) return;
     
@@ -91,7 +139,16 @@ class SpeechService {
     }
   }
 
-  // قراءة النص
+  /// تحويل النص إلى كلام وقراءته
+  /// 
+  /// [text] النص المراد قراءته
+  /// 
+  /// يستخدم اللغة العربية وسرعة قراءة متوسطة
+  /// 
+  /// مثال:
+  /// ```dart
+  /// await service.speak('مرحباً بك');
+  /// ```
   Future<void> speak(String text) async {
     try {
       await _flutterTts.speak(text);
@@ -100,7 +157,9 @@ class SpeechService {
     }
   }
 
-  // إيقاف القراءة
+  /// إيقاف قراءة النص
+  /// 
+  /// يوقف محرك TTS فوراً
   Future<void> stopSpeaking() async {
     try {
       await _flutterTts.stop();
@@ -109,7 +168,26 @@ class SpeechService {
     }
   }
 
-  // معالجة الأوامر الصوتية
+  /// معالجة الأوامر الصوتية وتحويلها إلى أوامر مفهومة
+  /// 
+  /// [text] النص المراد معالجته
+  /// 
+  /// Returns: [VoiceCommand] يحتوي على نوع الأمر والبيانات
+  /// 
+  /// الأوامر المدعومة:
+  /// - إضافة مهمة: 'أضف مهمة ...'
+  /// - بحث: 'ابحث عن ...'
+  /// - عرض المهام: 'اعرض المهام'
+  /// - إكمال مهمة: 'اكمل مهمة ...'
+  /// - حذف مهمة: 'احذف مهمة ...'
+  /// 
+  /// مثال:
+  /// ```dart
+  /// final command = service.processVoiceCommand('أضف مهمة اجتماع غداً');
+  /// if (command.type == VoiceCommandType.addTask) {
+  ///   print('المهمة: ${command.data['taskText']}');
+  /// }
+  /// ```
   VoiceCommand processVoiceCommand(String text) {
     final lowerText = text.toLowerCase();
     
@@ -162,10 +240,21 @@ class SpeechService {
     );
   }
 
+  /// يتحقق إذا كان النص يحتوي على أي من الكلمات المحددة
+  /// 
+  /// [text] النص للبحث فيه
+  /// [words] قائمة الكلمات للبحث عنها
+  /// Returns: true إذا وجدت أي كلمة
   bool _containsAny(String text, List<String> words) {
     return words.any((word) => text.contains(word));
   }
 
+  /// استخراج نص المهمة من الأمر الصوتي
+  /// 
+  /// يزيل كلمات الأوامر ويبقي على نص المهمة فقط
+  /// 
+  /// [command] الأمر الكامل
+  /// Returns: نص المهمة بدون كلمات الأوامر
   String _extractTaskFromCommand(String command) {
     final lowerCommand = command.toLowerCase();
     
@@ -180,6 +269,12 @@ class SpeechService {
     return result.isNotEmpty ? result : command;
   }
 
+  /// استخراج نص البحث من الأمر الصوتي
+  /// 
+  /// يزيل كلمات البحث ويبقي على النص المراد البحث عنه
+  /// 
+  /// [command] الأمر الكامل
+  /// Returns: نص البحث
   String _extractSearchQuery(String command) {
     final lowerCommand = command.toLowerCase();
     
@@ -194,33 +289,60 @@ class SpeechService {
     return result.isNotEmpty ? result : command;
   }
 
-  // الحصول على حالة الاستماع
+  /// هل الخدمة تستمع حالياً؟
   bool get isListening => _isListening;
+  
+  /// هل تم تهيئة الخدمة؟
   bool get isInitialized => _isInitialized;
+  
+  /// هل خدمة التعرف على الصوت متاحة؟
   bool get isAvailable => _speechToText.isAvailable;
 
-  // تنظيف الموارد
+  /// تنظيف الموارد وإيقاف جميع العمليات
+  /// 
+  /// يجب استدعاؤها عند الانتهاء من استخدام الخدمة
   void dispose() {
     _speechToText.cancel();
     _flutterTts.stop();
   }
 }
 
-// أنواع الأوامر الصوتية
+/// أنواع الأوامر الصوتية المدعومة
 enum VoiceCommandType {
+  /// إضافة مهمة جديدة
   addTask,
+  
+  /// البحث عن مهام
   search,
+  
+  /// عرض جميع المهام
   showTasks,
+  
+  /// إكمال مهمة
   completeTask,
+  
+  /// حذف مهمة
   deleteTask,
+  
+  /// أمر غير معروف
   unknown,
 }
 
-// نموذج الأمر الصوتي
+/// نموذج بيانات الأمر الصوتي
+/// 
+/// يحتوي على نوع الأمر والبيانات المرتبطة به
 class VoiceCommand {
+  /// نوع الأمر الصوتي
   final VoiceCommandType type;
+  
+  /// بيانات إضافية خاصة بالأمر
+  /// 
+  /// مثل:
+  /// - addTask: {'taskText': 'نص المهمة'}
+  /// - search: {'query': 'نص البحث'}
   final Map<String, dynamic> data;
 
+  /// Constructor للأمر الصوتي
   VoiceCommand({
     required this.type,
     required this.data,

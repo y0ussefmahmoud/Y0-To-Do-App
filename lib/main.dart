@@ -5,6 +5,14 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'models/task.dart';
 import 'screens/enhanced_home_screen.dart';
 
+/// نقطة الدخول الرئيسية للتطبيق
+/// 
+/// تقوم بـ:
+/// 1. تهيئة Flutter bindings
+/// 2. تهيئة Hive لقاعدة البيانات المحلية
+/// 3. تسجيل محولات Hive
+/// 4. فتح صندوق المهام
+/// 5. تشغيل التطبيق
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -22,6 +30,12 @@ Future<void> main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
+/// الويدجت الرئيسية للتطبيق
+/// 
+/// تحتوي على:
+/// - إعدادات MaterialApp
+/// - ثيم فاتح وداكن
+/// - دعم الوضع التلقائي حسب نظام التشغيل
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -37,6 +51,10 @@ class MyApp extends StatelessWidget {
     );
   }
 
+  /// بناء الثيم الفاتح
+  /// 
+  /// يحتوي على تخصيص شامل للألوان والأشكال
+  /// يستخدم Material 3 design
   ThemeData _buildLightTheme() {
     const primaryColor = Color(0xFF6366F1); // Indigo
     const secondaryColor = Color(0xFF06D6A0); // Teal
@@ -130,6 +148,10 @@ class MyApp extends StatelessWidget {
     );
   }
 
+  /// بناء الثيم الداكن
+  /// 
+  /// يحتوي على تخصيص للوضع الليلي
+  /// يستخدم Material 3 design
   ThemeData _buildDarkTheme() {
     const primaryColor = Color(0xFF6366F1);
     const backgroundColor = Color(0xFF0F172A);

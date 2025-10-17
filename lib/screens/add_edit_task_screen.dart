@@ -9,9 +9,38 @@ import '../providers/ai_provider.dart';
 import '../widgets/voice_input_button.dart';
 import '../services/ai_service.dart';
 
+/// شاشة إضافة أو تعديل مهمة
+/// 
+/// توفر واجهة لإنشاء مهمة جديدة أو تعديل مهمة موجودة
+/// 
+/// الميزات:
+/// - تحليل ذكي للنص باستخدام AI
+/// - اقتراح الأولوية والتاريخ تلقائياً
+/// - اختيار تاريخ الاستحقاق
+/// - تحديد مستوى الأولوية
+/// - إضافة ملاحظات
+/// 
+/// مثال على الاستخدام:
+/// ```dart
+/// // إضافة مهمة جديدة
+/// Navigator.push(
+///   context,
+///   MaterialPageRoute(builder: (context) => AddEditTaskScreen()),
+/// );
+/// 
+/// // تعديل مهمة موجودة
+/// Navigator.push(
+///   context,
+///   MaterialPageRoute(
+///     builder: (context) => AddEditTaskScreen(task: existingTask),
+///   ),
+/// );
+/// ```
 class AddEditTaskScreen extends StatefulWidget {
   const AddEditTaskScreen({super.key, this.task});
 
+  /// المهمة المراد تعديلها (اختياري)
+  /// إذا كانت null، سيتم إنشاء مهمة جديدة
   final Task? task;
 
   @override
@@ -19,11 +48,22 @@ class AddEditTaskScreen extends StatefulWidget {
 }
 
 class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
+  /// مفتاح النموذج للتحقق من صحة البيانات
   final _formKey = GlobalKey<FormState>();
+  
+  /// متحكم في حقل عنوان المهمة
   final _titleController = TextEditingController();
+  
+  /// متحكم في حقل الملاحظات
   final _noteController = TextEditingController();
+  
+  /// تاريخ استحقاق المهمة
   DateTime? _dueDate;
+  
+  /// مستوى أولوية المهمة (0-2)
   int _priority = 0;
+  
+  /// نتيجة تحليل AI للمهمة
   TaskAnalysis? _aiAnalysis;
 
   @override
@@ -45,6 +85,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
     super.dispose();
   }
 
+  /// فتح محدد التاريخ لاختيار تاريخ الاستحقاق
   Future<void> _pickDueDate() async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -58,6 +99,9 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
     }
   }
 
+  /// حفظ المهمة وإرجاعها إلى الشاشة السابقة
+  /// 
+  /// يتحقق من صحة البيانات قبل الحفظ
   void _saveTask() {
     if (!_formKey.currentState!.validate()) return;
 
@@ -76,6 +120,10 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
     Navigator.pop(context, result);
   }
 
+  /// تحليل نص المهمة باستخدام AI
+  /// 
+  /// يتم استدعاؤها عند تغيير نص المهمة
+  /// [text] نص المهمة الجديد
   void _analyzeTaskText(String text) {
     if (text.isNotEmpty) {
       final analysis = AIService().analyzeTaskText(text);
@@ -89,6 +137,10 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
     }
   }
 
+  /// تحويل رقم الأولوية إلى نص
+  /// 
+  /// [priority] رقم الأولوية (0-2)
+  /// Returns: نص الأولوية (منخفضة، متوسطة، عالية)
   String _getPriorityText(int priority) {
     switch (priority) {
       case 2: return 'عالية';
@@ -97,6 +149,10 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
     }
   }
 
+  /// الحصول على لون الأولوية
+  /// 
+  /// [priority] رقم الأولوية (0-2)
+  /// Returns: لون يمثل الأولوية (أخضر، برتقالي، أحمر)
   Color _getPriorityColor(int priority) {
     switch (priority) {
       case 2: return const Color(0xFFDC2626); // High - Red

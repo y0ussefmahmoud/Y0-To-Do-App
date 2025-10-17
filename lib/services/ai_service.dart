@@ -1,12 +1,41 @@
 import 'dart:math';
 import 'package:intl/intl.dart';
 
+/// خدمة الذكاء الاصطناعي (AI Service)
+/// 
+/// توفر وظائف NLP (Natural Language Processing) لتحليل المهام:
+/// - استخراج الأولوية من النص
+/// - استخراج التاريخ من النص
+/// - تقدير مدة المهمة
+/// - اقتراح الفئة
+/// - توليد اقتراحات ذكية
+/// - تحليل الإنتاجية
+/// 
+/// يستخدم Singleton Pattern لضمان instance واحد فقط
 class AIService {
   static final AIService _instance = AIService._internal();
+  
+  /// Factory constructor يرجع نفس الـ instance
   factory AIService() => _instance;
+  
+  /// Private constructor لل Singleton
   AIService._internal();
 
-  // NLP للتحليل المحلي
+  /// تحليل نص المهمة باستخدام NLP
+  /// 
+  /// [text] نص المهمة المراد تحليله
+  /// 
+  /// Returns: [TaskAnalysis] يحتوي على:
+  /// - الأولوية (0-2)
+  /// - تاريخ الاستحقاق
+  /// - المدة المقدرة (بالدقائق)
+  /// - الفئة المقترحة
+  /// 
+  /// مثال:
+  /// ```dart
+  /// final analysis = AIService().analyzeTaskText('اجتماع مهم غداً');
+  /// print('الأولوية: ${analysis.priority}'); // 2 (عالية)
+  /// ```
   TaskAnalysis analyzeTaskText(String text) {
     final analysis = TaskAnalysis();
     final lowerText = text.toLowerCase();
@@ -26,7 +55,12 @@ class AIService {
     return analysis;
   }
 
-  // استخراج الأولوية من النص
+  /// استخراج الأولوية من النص
+  /// 
+  /// يبحث عن كلمات مفتاحية تدل على الأولوية
+  /// 
+  /// [text] النص بأحرف صغيرة
+  /// Returns: 0 (منخفضة), 1 (متوسطة), 2 (عالية)
   int _extractPriority(String text) {
     // كلمات عربية للأولوية العالية
     final urgentWords = ['عاجل', 'مهم', 'ضروري', 'فوري', 'urgent', 'important', 'critical'];
@@ -55,7 +89,13 @@ class AIService {
     return 0; // Default low priority
   }
 
-  // استخراج التاريخ من النص
+  /// استخراج التاريخ من النص
+  /// 
+  /// يتعرف على كلمات مثل: غداً، بعد غد، الأسبوع القادم
+  /// وأيضاً يتعرف على التواريخ بصيغة DD/MM
+  /// 
+  /// [text] النص بأحرف صغيرة
+  /// Returns: DateTime إذا تم التعرف على تاريخ، null إذا لم يتم
   DateTime? _extractDate(String text) {
     final now = DateTime.now();
     
@@ -88,7 +128,12 @@ class AIService {
     return null;
   }
 
-  // تقدير مدة المهمة
+  /// تقدير مدة المهمة بالدقائق
+  /// 
+  /// يعتمد على كلمات مفتاحية وطول النص
+  /// 
+  /// [text] النص بأحرف صغيرة
+  /// Returns: المدة المقدرة بالدقائق (15-240)
   int _estimateDuration(String text) {
     // كلمات تدل على مدة قصيرة (دقائق)
     final quickWords = ['سريع', 'بسيط', 'quick', 'simple', 'call', 'مكالمة'];
@@ -115,7 +160,12 @@ class AIService {
     return 60;
   }
 
-  // اقتراح الفئة
+  /// اقتراح فئة للمهمة
+  /// 
+  /// يبحث عن كلمات مفتاحية لتحديد الفئة
+  /// 
+  /// [text] النص بأحرف صغيرة
+  /// Returns: الفئة (العمل، شخصي، التعلم، الصحة، عام)
   String _suggestCategory(String text) {
     final workWords = ['عمل', 'مكتب', 'اجتماع', 'work', 'office', 'meeting'];
     final personalWords = ['شخصي', 'منزل', 'عائلة', 'personal', 'home', 'family'];
@@ -141,7 +191,18 @@ class AIService {
     return 'عام';
   }
 
-  // اقتراحات ذكية للمهام
+  /// توليد اقتراحات ذكية للمهام
+  /// 
+  /// يعتمد على الوقت الحالي واليوم لتوليد اقتراحات مناسبة
+  /// 
+  /// [recentTasks] قائمة بالمهام الأخيرة (غير مستخدمة حالياً)
+  /// Returns: قائمة بأفضل 3 اقتراحات
+  /// 
+  /// مثال:
+  /// ```dart
+  /// final suggestions = AIService().getSmartSuggestions([]);
+  /// // في الصباح: ['مراجعة الإيميلات', 'تحضير خطة اليوم', ...]
+  /// ```
   List<String> getSmartSuggestions(List<String> recentTasks) {
     final suggestions = <String>[];
     final now = DateTime.now();
@@ -179,7 +240,16 @@ class AIService {
     return suggestions.take(3).toList();
   }
 
-  // تحليل الإنتاجية
+  /// تحليل الإنتاجية بناءً على المهام المكتملة
+  /// 
+  /// يحسب نقاط الإنتاجية ويحدد أفضل وقت للعمل
+  /// ويقدم اقتراحات للتحسين
+  /// 
+  /// [completedTasks] قائمة بالمهام المكتملة مع تاريخ completedAt
+  /// Returns: [ProductivityAnalysis] يحتوي على:
+  /// - نقاط الإنتاجية (0-100)
+  /// - أفضل وقت للعمل
+  /// - اقتراحات التحسين
   ProductivityAnalysis analyzeProductivity(List<Map<String, dynamic>> completedTasks) {
     final analysis = ProductivityAnalysis();
     
@@ -223,6 +293,10 @@ class AIService {
     return analysis;
   }
 
+  /// توليد اقتراحات لتحسين الإنتاجية
+  /// 
+  /// [score] نقاط الإنتاجية (0-100)
+  /// Returns: قائمة بالاقتراحات المناسبة
   List<String> _generateImprovementSuggestions(int score) {
     if (score >= 80) {
       return [
@@ -252,16 +326,33 @@ class AIService {
   }
 }
 
-// نماذج البيانات
+/// نموذج بيانات تحليل المهمة
+/// 
+/// يحتوي على نتائج تحليل NLP للمهمة
 class TaskAnalysis {
+  /// الأولوية المستخرجة (0-2)
   int priority = 0;
+  
+  /// تاريخ الاستحقاق المستخرج
   DateTime? dueDate;
-  int estimatedDuration = 30; // minutes
+  
+  /// المدة المقدرة بالدقائق
+  int estimatedDuration = 30;
+  
+  /// الفئة المقترحة
   String suggestedCategory = 'عام';
 }
 
+/// نموذج بيانات تحليل الإنتاجية
+/// 
+/// يحتوي على نتائج تحليل أداء المستخدم
 class ProductivityAnalysis {
+  /// نقاط الإنتاجية (0-100)
   int score = 0;
+  
+  /// أفضل وقت للعمل (الصباح، بعد الظهر، المساء)
   String bestTimeToWork = 'الصباح';
+  
+  /// قائمة بالاقتراحات لتحسين الإنتاجية
   List<String> suggestions = [];
 }
