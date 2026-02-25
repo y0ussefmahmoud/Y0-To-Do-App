@@ -716,13 +716,13 @@ class HomeScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: task.category.color.withAlpha(25),
+                        color: task.safeCategory.color.withAlpha(25),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        task.category.icon,
+                        task.safeCategory.icon,
                         size: 14,
-                        color: task.category.color,
+                        color: task.safeCategory.color,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1371,7 +1371,7 @@ class HomeScreen extends ConsumerWidget {
     final noteController = TextEditingController(text: task.note ?? '');
     DateTime? selectedDate = task.dueDate;
     int selectedPriority = task.priority;
-    TaskCategory selectedCategory = task.category;
+    TaskCategory selectedCategory = task.safeCategory;
     bool isLoading = false;
     
     showDialog(

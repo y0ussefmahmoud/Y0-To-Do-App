@@ -138,7 +138,7 @@ class StatisticsNotifier extends StateNotifier<StatisticsState> {
       // حساب توزيع المهام حسب التصنيف
       final categoryDistribution = <TaskCategory, int>{};
       for (final task in tasks) {
-        categoryDistribution[task.category] = (categoryDistribution[task.category] ?? 0) + 1;
+        categoryDistribution[task.safeCategory] = (categoryDistribution[task.safeCategory] ?? 0) + 1;
       }
 
       // حساب توزيع المهام حسب الأولوية
@@ -157,7 +157,7 @@ class StatisticsNotifier extends StateNotifier<StatisticsState> {
             .where((task) => task.isDone)
             .map((task) => {
                   'title': task.title,
-                  'category': task.category.name,
+                  'category': task.safeCategory.name,
                   'priority': task.priority,
                   'completedAt': task.dueDate?.toIso8601String() ?? DateTime.now().toIso8601String(),
                 })

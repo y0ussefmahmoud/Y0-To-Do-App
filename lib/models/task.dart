@@ -51,7 +51,7 @@ class Task {
   /// تصنيف المهمة
   /// يساعد في تنظيم المهام حسب النوع (عمل، شخصي، دراسة، صحة، عام)
   @HiveField(6)
-  TaskCategory category;
+  TaskCategory? category;
 
   /// Constructor للمهمة
   /// 
@@ -71,6 +71,9 @@ class Task {
     this.isDone = false,
     this.category = TaskCategory.general,
   });
+
+  /// Getter للحصول على التصنيف مع قيمة افتراضية آمنة
+  TaskCategory get safeCategory => category ?? TaskCategory.general;
 
   /// إنشاء نسخة جديدة من المهمة مع تعديل بعض الخصائص
   /// 

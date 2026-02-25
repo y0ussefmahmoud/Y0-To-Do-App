@@ -23,7 +23,7 @@ class TaskAdapter extends TypeAdapter<Task> {
       dueDate: fields[3] as DateTime?,
       priority: fields[4] as int,
       isDone: fields[5] as bool,
-      category: fields[6] as TaskCategory,
+      category: fields[6] as TaskCategory?,
     );
   }
 

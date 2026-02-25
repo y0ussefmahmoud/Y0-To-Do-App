@@ -181,6 +181,40 @@ class ErrorView extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               
+              // عرض تفاصيل الخطأ المبسطة في release mode أيضاً
+              if (error.toString().isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'تفاصيل الخطأ:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red[700],
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _getSimplifiedErrorMessage(error),
+                        style: TextStyle(
+                          color: Colors.red[600],
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              
               const SizedBox(height: 32),
               
               // الأزرار
@@ -248,6 +282,32 @@ class ErrorView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// تبسيط رسالة الخطأ للمستخدم
+  String _getSimplifiedErrorMessage(Object error) {
+    final errorString = error.toString();
+    
+    if (errorString.contains('Hive') || errorString.contains('hive')) {
+      return 'مشكلة في قاعدة البيانات المحلية. قد تحتاج إلى مسح بيانات التطبيق وإعادة التثبيت.';
+    } else if (errorString.contains('Adapter') || errorString.contains('adapter')) {
+      return 'مشكلة في تهيئة مكونات التطبيق. يرجى إعادة تشغيل التطبيق.';
+    } else if (errorString.contains('Notification') || errorString.contains('notification')) {
+      return 'مشكلة في خدمة الإشعارات. التطبيق سيعمل بدون إشعارات.';
+    } else if (errorString.contains('Permission') || errorString.contains('permission')) {
+      return 'مشكلة في صلاحيات التطبيق. يرجى التحقق من صلاحيات التطبيق في الإعدادات.';
+    } else if (errorString.contains('Storage') || errorString.contains('storage')) {
+      return 'مشكلة في التخزين. قد يكون مساحة التخزين ممتلئة.';
+    } else if (errorString.contains('Network') || errorString.contains('network')) {
+      return 'مشكلة في الاتصال بالإنترنت.';
+    } else if (errorString.contains('Initialization') || errorString.contains('initialization')) {
+      return 'فشل في تهيئة التطبيق. يرجى إعادة تشغيل التطبيق.';
+    } else {
+      // إرجاع أول 100 حرف من رسالة الخطأ إذا كانت طويلة
+      return errorString.length > 100 
+          ? '${errorString.substring(0, 100)}...'
+          : errorString;
+    }
   }
 
   /// عرض تفاصيل الخطأ (للتطوير فقط)

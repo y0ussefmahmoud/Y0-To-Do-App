@@ -33,7 +33,7 @@ class AccessibilityHelper {
     buffer.write(', الأولوية: ${getPriorityLabel(task.priority)}');
     
     // التصنيف
-    buffer.write(', التصنيف: ${getCategoryLabel(task.category)}');
+    buffer.write(', التصنيف: ${getCategoryLabel(task.safeCategory)}');
     
     // التاريخ
     if (task.dueDate != null) {

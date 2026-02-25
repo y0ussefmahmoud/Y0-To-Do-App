@@ -61,30 +61,55 @@ class NotificationService {
     if (_isInitialized) return true;
 
     try {
-      // طلب أذونات الإشعارات
+      // طلب أذونات الإشعارات مع معالجة أفضل
       final notificationPermission = await Permission.notification.request();
       if (notificationPermission.isDenied) {
         debugPrint('تم رفض إذن الإشعارات');
+        // لا نرجع false فوراً، نحاول الاستمرار بدون إشعارات
+        // return false;
+      } else if (notificationPermission.isPermanentlyDenied) {
+        debugPrint('تم رفض إذن الإشعارات بشكل دائم');
+        // return false;
+      }
+
+      // تهيئة timezone مع معالجة خطأ
+      try {
+        tz.initializeTimeZones();
+      } catch (e) {
+        debugPrint('خطأ في تهيئة timezone: $e');
+        // نستمر بدون timezone
+      }
+
+      // إعدادات Android مع معالجة خطأ
+      AndroidInitializationSettings? androidInitializationSettings;
+      try {
+        androidInitializationSettings = const AndroidInitializationSettings(
+          '@mipmap/ic_launcher',
+        );
+      } catch (e) {
+        debugPrint('خطأ في إعدادات Android: $e');
+      }
+
+      // إعدادات iOS مع معالجة خطأ
+      DarwinInitializationSettings? darwinInitializationSettings;
+      try {
+        darwinInitializationSettings = const DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
+      } catch (e) {
+        debugPrint('خطأ في إعدادات iOS: $e');
+      }
+
+      // التحقق من وجود الإعدادات
+      if (androidInitializationSettings == null || darwinInitializationSettings == null) {
+        debugPrint('فشل في تهيئة إعدادات المنصة');
         return false;
       }
 
-      // تهيئة timezone
-      tz.initializeTimeZones();
-
-      // إعدادات Android
-      const androidInitializationSettings = AndroidInitializationSettings(
-        '@mipmap/ic_launcher',
-      );
-
-      // إعدادات iOS
-      const darwinInitializationSettings = DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
-      );
-
       // إعدادات التهيئة
-      const initializationSettings = InitializationSettings(
+      final initializationSettings = InitializationSettings(
         android: androidInitializationSettings,
         iOS: darwinInitializationSettings,
       );
@@ -95,20 +120,25 @@ class NotificationService {
         onDidReceiveNotificationResponse: _onNotificationTapped,
       );
 
-      // إنشاء notification channel لـ Android
-      const androidChannel = AndroidNotificationChannel(
-        'tasks_channel',
-        'إشعارات المهام',
-        description: 'إشعارات للمهام القريبة من موعدها',
-        importance: Importance.high,
-        enableVibration: true,
-        playSound: true,
-      );
+      // إنشاء notification channel لـ Android مع معالجة خطأ
+      try {
+        const androidChannel = AndroidNotificationChannel(
+          'tasks_channel',
+          'إشعارات المهام',
+          description: 'إشعارات للمهام القريبة من موعدها',
+          importance: Importance.high,
+          enableVibration: true,
+          playSound: true,
+        );
 
-      await _flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(androidChannel);
+        await _flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.createNotificationChannel(androidChannel);
+      } catch (e) {
+        debugPrint('خطأ في إنشاء notification channel: $e');
+        // نستمر بدون channel
+      }
 
       _isInitialized = true;
       return true;

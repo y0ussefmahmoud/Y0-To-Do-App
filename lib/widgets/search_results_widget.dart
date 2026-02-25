@@ -280,13 +280,13 @@ class SearchResultsWidget extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: task.category.color.withValues(alpha: 0.1),
+                color: task.safeCategory.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-                task.category.icon,
+                task.safeCategory.icon,
                 size: 14,
-                color: task.category.color,
+                color: task.safeCategory.color,
               ),
             ),
             const SizedBox(width: 8),

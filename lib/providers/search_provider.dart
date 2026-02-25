@@ -87,7 +87,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         final searchLower = query.toLowerCase();
         return task.title.toLowerCase().contains(searchLower) ||
                (task.note?.toLowerCase().contains(searchLower) ?? false) ||
-               task.category.displayName.toLowerCase().contains(searchLower);
+               task.safeCategory.displayName.toLowerCase().contains(searchLower);
       }).toList();
 
       // Rank results using AI service

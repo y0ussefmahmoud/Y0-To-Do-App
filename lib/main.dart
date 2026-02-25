@@ -36,40 +36,133 @@ Future<void> main() async {
   ErrorHandler.logInfo('Starting Y0 To-Do App initialization');
 
   try {
-    // Initialize notification service
+    // Initialize notification service with better error handling
     NotificationService.setNavigatorKey(appNavigatorKey);
     
-    final notificationService = NotificationService();
-    await notificationService.initialize();
-    ErrorHandler.logSuccess('Notification service initialized');
+    try {
+      final notificationService = NotificationService();
+      final notificationInitialized = await notificationService.initialize();
+      if (notificationInitialized) {
+        ErrorHandler.logSuccess('Notification service initialized');
+      } else {
+        ErrorHandler.logWarning('Notification service failed to initialize - app will continue without notifications');
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, context: 'Notification service initialization failed');
+      // Continue without notifications
+    }
 
-    // Initialize Hive
-    await Hive.initFlutter();
-    ErrorHandler.logSuccess('Hive initialized');
+    // Initialize Hive with comprehensive error handling
+    try {
+      ErrorHandler.logInfo('Initializing Hive...');
+      await Hive.initFlutter();
+      ErrorHandler.logSuccess('Hive initialized');
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, context: 'Failed to initialize Hive');
+      
+      // Try to recover from Hive initialization error
+      try {
+        // Try to delete corrupted Hive files and reinitialize
+        ErrorHandler.logInfo('Attempting to recover from Hive initialization error');
+        await Hive.deleteFromDisk();
+        await Hive.initFlutter();
+        ErrorHandler.logSuccess('Hive recovered and initialized successfully');
+      } catch (recoveryError, recoveryStackTrace) {
+        ErrorHandler.handleError(recoveryError, recoveryStackTrace, context: 'Failed to recover Hive initialization');
+        
+        // Last resort: try to initialize with a different path
+        try {
+          ErrorHandler.logInfo('Attempting alternative Hive initialization...');
+          // Try to force clean initialization
+          await Future.delayed(const Duration(milliseconds: 100));
+          await Hive.initFlutter();
+          ErrorHandler.logSuccess('Alternative Hive initialization successful');
+        } catch (finalError, finalStackTrace) {
+          ErrorHandler.handleError(finalError, finalStackTrace, context: 'All Hive initialization attempts failed');
+          rethrow; // If all attempts fail, we can't continue
+        }
+      }
+    }
     
-    // Register adapters
-    if (!Hive.isAdapterRegistered(2)) {
-      Hive.registerAdapter(TaskCategoryAdapter());
+    // Register adapters with error handling
+    try {
+      ErrorHandler.logInfo('Checking TaskCategoryAdapter registration...');
+      if (!Hive.isAdapterRegistered(2)) {
+        Hive.registerAdapter(TaskCategoryAdapter());
+        ErrorHandler.logInfo('TaskCategoryAdapter registered successfully.');
+      } else {
+        ErrorHandler.logInfo('TaskCategoryAdapter already registered.');
+      }
+
+      ErrorHandler.logInfo('Checking TaskAdapter registration...');
+      if (!Hive.isAdapterRegistered(1)) {
+        Hive.registerAdapter(TaskAdapter());
+        ErrorHandler.logInfo('TaskAdapter registered successfully.');
+      } else {
+        ErrorHandler.logInfo('TaskAdapter already registered.');
+      }
+
+      ErrorHandler.logInfo('Checking SearchHistoryAdapter registration...');
+      if (!Hive.isAdapterRegistered(3)) {
+        Hive.registerAdapter(SearchHistoryAdapter());
+        ErrorHandler.logInfo('SearchHistoryAdapter registered successfully.');
+      } else {
+        ErrorHandler.logInfo('SearchHistoryAdapter already registered.');
+      }
+
+      ErrorHandler.logInfo('Checking AppSettingsAdapter registration...');
+      if (!Hive.isAdapterRegistered(4)) {
+        Hive.registerAdapter(AppSettingsAdapter());
+        ErrorHandler.logInfo('AppSettingsAdapter registered successfully.');
+      } else {
+        ErrorHandler.logInfo('AppSettingsAdapter already registered.');
+      }
+
+      ErrorHandler.logSuccess('All Hive adapters processed.');
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, context: 'Failed to register Hive adapters');
+      rethrow; // Adapters are critical, so rethrow
     }
-    if (!Hive.isAdapterRegistered(1)) {
-      Hive.registerAdapter(TaskAdapter());
-    }
-    if (!Hive.isAdapterRegistered(3)) {
-      Hive.registerAdapter(SearchHistoryAdapter());
-    }
-    if (!Hive.isAdapterRegistered(4)) {
-      Hive.registerAdapter(AppSettingsAdapter());
-    }
-    ErrorHandler.logSuccess('Hive adapters registered');
     
-    // Open boxes
-    await Hive.openBox<Task>('tasksBox');
-    await Hive.openBox<SearchHistory>('searchHistoryBox');
-    await Hive.openBox<AppSettings>('settingsBox');
-    ErrorHandler.logSuccess('Hive boxes opened');
+    // Open boxes with comprehensive error handling
+    Box<Task>? tasksBox;
+    Box<SearchHistory>? searchHistoryBox;
+    Box<AppSettings>? settingsBox;
+    
+    try {
+      ErrorHandler.logInfo('Opening tasksBox...');
+      tasksBox = await Hive.openBox<Task>('tasksBox');
+      ErrorHandler.logSuccess('tasksBox opened');
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, context: 'Failed to open tasksBox');
+      rethrow; // Tasks box is critical
+    }
+    
+    try {
+      ErrorHandler.logInfo('Opening searchHistoryBox...');
+      searchHistoryBox = await Hive.openBox<SearchHistory>('searchHistoryBox');
+      ErrorHandler.logSuccess('searchHistoryBox opened');
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, context: 'Failed to open searchHistoryBox');
+      // Continue without search history - not critical
+    }
+    
+    try {
+      ErrorHandler.logInfo('Opening settingsBox...');
+      settingsBox = await Hive.openBox<AppSettings>('settingsBox');
+      ErrorHandler.logSuccess('settingsBox opened');
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, context: 'Failed to open settingsBox');
+      rethrow; // Settings box is critical
+    }
 
     // Check for pending navigation from background notifications
-    await NotificationService.checkPendingNavigation();
+    try {
+      await NotificationService.checkPendingNavigation();
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, context: 'Failed to check pending navigation');
+      // Continue - not critical
+    }
 
     ErrorHandler.logSuccess('App initialization completed successfully');
 
@@ -86,13 +179,13 @@ Future<void> main() async {
   } catch (e, stackTrace) {
     ErrorHandler.handleError(e, stackTrace, context: 'App initialization');
     
-    // في حالة فشل التهيئة، نعرض تطبيق بسيط مع رسالة خطأ
+    // في حالة فشل التهيئة، نعرض تطبيق بسيط مع رسالة خطأ مفصلة
     runApp(
       MaterialApp(
         home: ErrorView(
           error: e,
           stackTrace: stackTrace,
-          customMessage: 'فشل في تهيئة التطبيق. يرجى إعادة تشغيل التطبيق.',
+          customMessage: 'فشل في تهيئة التطبيق: ${e.toString()}. يرجى إعادة تشغيل التطبيق أو مسح بيانات التطبيق وإعادة التثبيت.',
         ),
       ),
     );

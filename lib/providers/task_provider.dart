@@ -223,7 +223,7 @@ class TasksNotifier extends StateNotifier<List<Task>> {
 
     // فلترة حسب التصنيف
     if (filter.category != null) {
-      tasks = tasks.where((task) => task.category == filter.category).toList();
+      tasks = tasks.where((task) => task.safeCategory == filter.category).toList();
     }
 
     // فلترة حسب التاريخ

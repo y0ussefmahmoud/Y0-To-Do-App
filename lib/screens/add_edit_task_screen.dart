@@ -74,7 +74,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
       _noteController.text = t.note ?? '';
       _dueDate = t.dueDate;
       _priority = t.priority;
-      _category = t.category;
+      _category = t.safeCategory;
     }
   }
 

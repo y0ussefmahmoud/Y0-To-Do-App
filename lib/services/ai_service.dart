@@ -396,7 +396,7 @@ class AIService {
     
     for (final task in tasks) {
       // تحليل التصنيفات
-      categories[task.category.displayName] = (categories[task.category.displayName] ?? 0) + 1;
+      categories[task.safeCategory.displayName] = (categories[task.safeCategory.displayName] ?? 0) + 1;
       
       // تحليل الأولويات
       priorities[task.priority] = (priorities[task.priority] ?? 0) + 1;
@@ -500,7 +500,7 @@ class AIService {
       final noteMatch = task.note != null 
           ? _calculateMatchScore(task.note!.toLowerCase(), queryLower)
           : 0.0;
-      final categoryMatch = _calculateMatchScore(task.category.displayName.toLowerCase(), queryLower);
+      final categoryMatch = _calculateMatchScore(task.safeCategory.displayName.toLowerCase(), queryLower);
       
       score += (titleMatch * 0.6 + noteMatch * 0.3 + categoryMatch * 0.1) * 30;
       
