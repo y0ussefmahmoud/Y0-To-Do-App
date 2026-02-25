@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'task_category.dart';
 
 part 'task.g.dart';
 
@@ -47,6 +48,11 @@ class Task {
   @HiveField(5)
   bool isDone;
 
+  /// تصنيف المهمة
+  /// يساعد في تنظيم المهام حسب النوع (عمل، شخصي، دراسة، صحة، عام)
+  @HiveField(6)
+  TaskCategory category;
+
   /// Constructor للمهمة
   /// 
   /// [id] معرف فريد للمهمة (مطلوب)
@@ -55,6 +61,7 @@ class Task {
   /// [dueDate] تاريخ الاستحقاق (اختياري)
   /// [priority] الأولوية (افتراضي: 0 - منخفضة)
   /// [isDone] حالة الإنجاز (افتراضي: false)
+  /// [category] التصنيف (افتراضي: عام)
   Task({
     required this.id,
     required this.title,
@@ -62,6 +69,7 @@ class Task {
     this.dueDate,
     this.priority = 0,
     this.isDone = false,
+    this.category = TaskCategory.general,
   });
 
   /// إنشاء نسخة جديدة من المهمة مع تعديل بعض الخصائص
@@ -83,6 +91,7 @@ class Task {
     DateTime? dueDate,
     int? priority,
     bool? isDone,
+    TaskCategory? category,
   }) {
     return Task(
       id: id ?? this.id,
@@ -91,6 +100,7 @@ class Task {
       dueDate: dueDate ?? this.dueDate,
       priority: priority ?? this.priority,
       isDone: isDone ?? this.isDone,
+      category: category ?? this.category,
     );
   }
 }

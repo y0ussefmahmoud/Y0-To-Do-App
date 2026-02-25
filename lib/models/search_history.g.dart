@@ -1,50 +1,41 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'task.dart';
+part of 'search_history.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class TaskAdapter extends TypeAdapter<Task> {
+class SearchHistoryAdapter extends TypeAdapter<SearchHistory> {
   @override
-  final int typeId = 1;
+  final int typeId = 3;
 
   @override
-  Task read(BinaryReader reader) {
+  SearchHistory read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Task(
+    return SearchHistory(
       id: fields[0] as String,
-      title: fields[1] as String,
-      note: fields[2] as String?,
-      dueDate: fields[3] as DateTime?,
-      priority: fields[4] as int,
-      isDone: fields[5] as bool,
-      category: fields[6] as TaskCategory,
+      query: fields[1] as String,
+      timestamp: fields[2] as DateTime,
+      resultCount: fields[3] as int,
     );
   }
 
   @override
-  void write(BinaryWriter writer, Task obj) {
+  void write(BinaryWriter writer, SearchHistory obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.title)
+      ..write(obj.query)
       ..writeByte(2)
-      ..write(obj.note)
+      ..write(obj.timestamp)
       ..writeByte(3)
-      ..write(obj.dueDate)
-      ..writeByte(4)
-      ..write(obj.priority)
-      ..writeByte(5)
-      ..write(obj.isDone)
-      ..writeByte(6)
-      ..write(obj.category);
+      ..write(obj.resultCount);
   }
 
   @override
@@ -53,7 +44,7 @@ class TaskAdapter extends TypeAdapter<Task> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is TaskAdapter &&
+      other is SearchHistoryAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

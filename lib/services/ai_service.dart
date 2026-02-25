@@ -1,5 +1,6 @@
 import 'dart:math';
-import 'package:intl/intl.dart';
+import '../models/task.dart';
+import '../models/task_category.dart';
 
 /// خدمة الذكاء الاصطناعي (AI Service)
 /// 
@@ -20,6 +21,17 @@ class AIService {
   
   /// Private constructor لل Singleton
   AIService._internal();
+
+  /// Cache للاقتراحات الذكية
+  /// المفتاح: ساعة الحالية (0-23)
+  /// القيمة: قائمة الاقتراحات
+  final Map<String, List<String>> _suggestionsCache = {};
+  
+  /// وقت آخر تحديث للـ Cache
+  DateTime? _lastCacheTime;
+  
+  /// مدة صلاحية الـ Cache (ساعة واحدة)
+  static const _cacheDuration = Duration(hours: 1);
 
   /// تحليل نص المهمة باستخدام NLP
   /// 
@@ -165,35 +177,36 @@ class AIService {
   /// يبحث عن كلمات مفتاحية لتحديد الفئة
   /// 
   /// [text] النص بأحرف صغيرة
-  /// Returns: الفئة (العمل، شخصي، التعلم، الصحة، عام)
+  /// Returns: الفئة (work, personal, study, health, general)
   String _suggestCategory(String text) {
-    final workWords = ['عمل', 'مكتب', 'اجتماع', 'work', 'office', 'meeting'];
-    final personalWords = ['شخصي', 'منزل', 'عائلة', 'personal', 'home', 'family'];
-    final studyWords = ['دراسة', 'تعلم', 'كتاب', 'study', 'learn', 'book'];
-    final healthWords = ['رياضة', 'طبيب', 'صحة', 'sport', 'doctor', 'health'];
+    final workWords = ['عمل', 'مكتب', 'اجتماع', 'مشروع', 'تقرير', 'work', 'office', 'meeting', 'project', 'report'];
+    final personalWords = ['شخصي', 'منزل', 'عائلة', 'تسوق', 'personal', 'home', 'family', 'shopping'];
+    final studyWords = ['دراسة', 'تعلم', 'كتاب', 'قراءة', 'امتحان', 'study', 'learn', 'book', 'reading', 'exam'];
+    final healthWords = ['رياضة', 'طبيب', 'صحة', 'تمرين', 'جيم', 'sport', 'doctor', 'health', 'exercise', 'gym'];
     
     for (String word in workWords) {
-      if (text.contains(word)) return 'العمل';
+      if (text.contains(word)) return 'work';
     }
     
     for (String word in personalWords) {
-      if (text.contains(word)) return 'شخصي';
+      if (text.contains(word)) return 'personal';
     }
     
     for (String word in studyWords) {
-      if (text.contains(word)) return 'التعلم';
+      if (text.contains(word)) return 'study';
     }
     
     for (String word in healthWords) {
-      if (text.contains(word)) return 'الصحة';
+      if (text.contains(word)) return 'health';
     }
     
-    return 'عام';
+    return 'general';
   }
 
   /// توليد اقتراحات ذكية للمهام
   /// 
   /// يعتمد على الوقت الحالي واليوم لتوليد اقتراحات مناسبة
+  /// يستخدم Cache لتحسين الأداء وتقليل الحسابات المتكررة
   /// 
   /// [recentTasks] قائمة بالمهام الأخيرة (غير مستخدمة حالياً)
   /// Returns: قائمة بأفضل 3 اقتراحات
@@ -204,8 +217,30 @@ class AIService {
   /// // في الصباح: ['مراجعة الإيميلات', 'تحضير خطة اليوم', ...]
   /// ```
   List<String> getSmartSuggestions(List<String> recentTasks) {
-    final suggestions = <String>[];
     final now = DateTime.now();
+    final cacheKey = '${now.hour}';
+    
+    // التحقق من وجود Cache صالح
+    if (_isCacheValid() && _suggestionsCache.containsKey(cacheKey)) {
+      return _suggestionsCache[cacheKey]!;
+    }
+    
+    // توليد اقتراحات جديدة
+    final suggestions = _generateSuggestions(now);
+    
+    // حفظ في الـ Cache
+    _suggestionsCache[cacheKey] = suggestions;
+    _lastCacheTime = now;
+    
+    return suggestions;
+  }
+
+  /// توليد الاقتراحات الفعلية
+  /// 
+  /// [now] الوقت الحالي
+  /// Returns: قائمة بالاقتراحات
+  List<String> _generateSuggestions(DateTime now) {
+    final suggestions = <String>[];
     final hour = now.hour;
     
     // اقتراحات حسب الوقت
@@ -238,6 +273,24 @@ class AIService {
     }
     
     return suggestions.take(3).toList();
+  }
+
+  /// التحقق من صلاحية الـ Cache
+  /// 
+  /// Returns: true إذا كان الـ Cache صالحاً
+  bool _isCacheValid() {
+    if (_lastCacheTime == null) return false;
+    
+    final now = DateTime.now();
+    return now.difference(_lastCacheTime!) < _cacheDuration;
+  }
+
+  /// مسح الـ Cache يدوياً
+  /// 
+  /// تستخدم لتحديث الاقتراحات فوراً
+  void clearCache() {
+    _suggestionsCache.clear();
+    _lastCacheTime = null;
   }
 
   /// تحليل الإنتاجية بناءً على المهام المكتملة
@@ -323,6 +376,178 @@ class AIService {
         'احتفل بالإنجازات الصغيرة',
       ];
     }
+  }
+  
+  /// توليد اقتراحات بحث ذكية
+  /// 
+  /// يحلل المهام الموجودة لاستخراج كلمات مفتاحية شائعة
+  /// ويقترح عمليات بحث بناءً على التصنيفات والأولويات
+  /// 
+  /// [tasks] قائمة المهام لتحليلها
+  /// Returns: قائمة بالاقتراحات (5-7 اقتراحات)
+  Future<List<String>> generateSearchSuggestions(List<Task> tasks) async {
+    final suggestions = <String>[];
+    final now = DateTime.now();
+    
+    // تحليل المهام لاستخراج أنماط شائعة
+    final categories = <String, int>{};
+    final priorities = <int, int>{};
+    final keywords = <String, int>{};
+    
+    for (final task in tasks) {
+      // تحليل التصنيفات
+      categories[task.category.displayName] = (categories[task.category.displayName] ?? 0) + 1;
+      
+      // تحليل الأولويات
+      priorities[task.priority] = (priorities[task.priority] ?? 0) + 1;
+      
+      // استخراج كلمات مفتاحية من العناوين
+      final words = task.title.toLowerCase().split(' ');
+      for (final word in words) {
+        if (word.length > 3) {
+          keywords[word] = (keywords[word] ?? 0) + 1;
+        }
+      }
+    }
+    
+    // اقتراحات بناءً على الوقت والتاريخ
+    suggestions.addAll([
+      'مهام اليوم',
+      'مهام الغد',
+      'مهام هذا الأسبوع',
+    ]);
+    
+    // اقتراحات بناءً on الأولويات
+    if (priorities[2] != null && priorities[2]! > 0) {
+      suggestions.add('مهام عالية الأولوية');
+    }
+    if (priorities[0] != null && priorities[0]! > 0) {
+      suggestions.add('مهام منخفضة الأولوية');
+    }
+    
+    // اقتراحات بناءً على التصنيفات الأكثر شيوعاً
+    final sortedCategories = categories.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    
+    for (int i = 0; i < min(2, sortedCategories.length); i++) {
+      suggestions.add('مهام ${sortedCategories[i].key}');
+    }
+    
+    // اقتراحات بناءً على المهام المتأخرة
+    final overdueTasks = tasks.where((task) {
+      if (task.dueDate != null) {
+        return task.dueDate!.isBefore(now) && !task.isDone;
+      }
+      return false;
+    }).length;
+    
+    if (overdueTasks > 0) {
+      suggestions.add('مهام متأخرة');
+    }
+    
+    // اقتراحات بناءً على الكلمات المفتاحية الشائعة
+    final sortedKeywords = keywords.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    
+    for (int i = 0; i < min(2, sortedKeywords.length); i++) {
+      if (suggestions.length < 7) {
+        suggestions.add(sortedKeywords[i].key);
+      }
+    }
+    
+    return suggestions.take(7).toList();
+  }
+  
+  /// ترتيب نتائج البحث حسب الأهمية
+  /// 
+  /// يرتب النتائج بناءً على:
+  /// - الأولوية
+  /// - التاريخ (المهام القادمة أولاً)
+  /// - درجة التطابق
+  /// 
+  /// [tasks] قائمة المهام المرتبة
+  /// [query] نص البحث
+  /// Returns: قائمة المهام مرتبة حسب الأهمية
+  Future<List<Task>> rankSearchResults(List<Task> tasks, String query) async {
+    if (tasks.isEmpty) return tasks;
+    
+    final queryLower = query.toLowerCase();
+    final now = DateTime.now();
+    
+    // حساب درجة لكل مهمة
+    final scoredTasks = tasks.map((task) {
+      double score = 0.0;
+      
+      // درجة الأولوية (0-40 نقطة)
+      score += (2 - task.priority) * 20; // عالية الأولوية = 40، متوسطة = 20، منخفضة = 0
+      
+      // درجة التاريخ (0-30 نقطة)
+      if (task.dueDate != null) {
+        final daysUntilDue = task.dueDate!.difference(now).inDays;
+        if (daysUntilDue < 0) {
+          score += 30; // مهام متأخرة
+        } else if (daysUntilDue == 0) {
+          score += 25; // مهام اليوم
+        } else if (daysUntilDue <= 3) {
+          score += 20; // مهام قريبة
+        } else if (daysUntilDue <= 7) {
+          score += 10; // مهام هذا الأسبوع
+        }
+      }
+      
+      // درجة التطابق (0-30 نقطة)
+      final titleMatch = _calculateMatchScore(task.title.toLowerCase(), queryLower);
+      final noteMatch = task.note != null 
+          ? _calculateMatchScore(task.note!.toLowerCase(), queryLower)
+          : 0.0;
+      final categoryMatch = _calculateMatchScore(task.category.displayName.toLowerCase(), queryLower);
+      
+      score += (titleMatch * 0.6 + noteMatch * 0.3 + categoryMatch * 0.1) * 30;
+      
+      // مكافأة للمهام غير المكتملة
+      if (!task.isDone) {
+        score += 5;
+      }
+      
+      return MapEntry(task, score);
+    }).toList();
+    
+    // ترتيب تنازلي حسب النقاط
+    scoredTasks.sort((a, b) => b.value.compareTo(a.value));
+    
+    return scoredTasks.map((entry) => entry.key).toList();
+  }
+  
+  /// حساب درجة التطابق بين نصين
+  /// 
+  /// [text] النص المراد البحث فيه
+  /// [query] نص البحث
+  /// Returns: درجة التطابق (0.0 - 1.0)
+  double _calculateMatchScore(String text, String query) {
+    if (query.isEmpty) return 0.0;
+    if (text.isEmpty) return 0.0;
+    
+    // تطابق تام
+    if (text == query) return 1.0;
+    
+    // تطابق كامل للكلمة
+    if (text.contains(query)) return 0.8;
+    
+    // تطابق جزئي للكلمات
+    final queryWords = query.split(' ');
+    final textWords = text.split(' ');
+    
+    int matchedWords = 0;
+    for (final qWord in queryWords) {
+      for (final tWord in textWords) {
+        if (tWord.contains(qWord)) {
+          matchedWords++;
+          break;
+        }
+      }
+    }
+    
+    return matchedWords / queryWords.length;
   }
 }
 

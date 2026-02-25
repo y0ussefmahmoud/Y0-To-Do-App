@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
-
 import '../models/task.dart';
-import '../providers/ai_provider.dart';
-import '../widgets/voice_input_button.dart';
+import '../models/task_category.dart';
 import '../services/ai_service.dart';
 
 /// شاشة إضافة أو تعديل مهمة
@@ -63,6 +59,9 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
   /// مستوى أولوية المهمة (0-2)
   int _priority = 0;
   
+  /// تصنيف المهمة
+  TaskCategory _category = TaskCategory.general;
+  
   /// نتيجة تحليل AI للمهمة
   TaskAnalysis? _aiAnalysis;
 
@@ -75,6 +74,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
       _noteController.text = t.note ?? '';
       _dueDate = t.dueDate;
       _priority = t.priority;
+      _category = t.category;
     }
   }
 
@@ -114,6 +114,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
       note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
       dueDate: _dueDate,
       priority: _priority,
+      category: _category,
       isDone: widget.task?.isDone ?? false,
     );
 
@@ -129,7 +130,8 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
       final analysis = AIService().analyzeTaskText(text);
       setState(() {
         _aiAnalysis = analysis;
-      });
+        _category = taskCategoryFromString(analysis.suggestedCategory);
+            });
     } else {
       setState(() {
         _aiAnalysis = null;
@@ -149,15 +151,15 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
     }
   }
 
-  /// الحصول على لون الأولوية
-  /// 
-  /// [priority] رقم الأولوية (0-2)
-  /// Returns: لون يمثل الأولوية (أخضر، برتقالي، أحمر)
-  Color _getPriorityColor(int priority) {
-    switch (priority) {
-      case 2: return const Color(0xFFDC2626); // High - Red
-      case 1: return const Color(0xFFF59E0B); // Medium - Orange
-      default: return const Color(0xFF10B981); // Low - Green
+  /// تحويل نص الفئة إلى enum
+  TaskCategory taskCategoryFromString(String categoryName) {
+    switch (categoryName) {
+      case 'general': return TaskCategory.general;
+      case 'work': return TaskCategory.work;
+      case 'personal': return TaskCategory.personal;
+      case 'shopping': return TaskCategory.shopping;
+      case 'entertainment': return TaskCategory.entertainment;
+      default: return TaskCategory.general;
     }
   }
 
@@ -207,7 +209,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -270,7 +272,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
-                value: _priority,
+                initialValue: _priority,
                 decoration: const InputDecoration(
                   labelText: 'الأولوية',
                   border: OutlineInputBorder(),
@@ -281,6 +283,43 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                   DropdownMenuItem(value: 2, child: Text('عالية')),
                 ],
                 onChanged: (value) => setState(() => _priority = value!),
+              ),
+              const SizedBox(height: 16),
+              const Text('التصنيف:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: TaskCategory.values.map((category) {
+                  final isSelected = _category == category;
+                  return ChoiceChip(
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          category.icon,
+                          size: 16,
+                          color: isSelected ? Colors.white : category.color,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(category.displayName),
+                      ],
+                    ),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _category = category;
+                      });
+                    },
+                    backgroundColor: category.color.withValues(alpha: 0.1),
+                    selectedColor: category.color,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : category.color,
+                      fontSize: 12,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 24),
               SizedBox(

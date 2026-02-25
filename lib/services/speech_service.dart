@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -8,9 +10,11 @@ import 'package:permission_handler/permission_handler.dart';
 /// - التعرف على الصوت (Speech to Text)
 /// - تحويل النص إلى كلام (Text to Speech)
 /// - معالجة الأوامر الصوتية
+/// - إدارة الموارد تلقائياً مع idle timer
 /// 
 /// يستخدم Singleton Pattern لضمان instance واحد فقط
 /// يدعم اللغة العربية (ar-SA)
+/// يحرر الموارد تلقائياً بعد 5 دقائق من عدم الاستخدام
 class SpeechService {
   static final SpeechService _instance = SpeechService._internal();
   
@@ -21,20 +25,27 @@ class SpeechService {
   SpeechService._internal();
 
   /// محرك التعرف على الصوت
-  final SpeechToText _speechToText = SpeechToText();
+  SpeechToText? _speechToText;
   
   /// محرك تحويل النص إلى كلام
-  final FlutterTts _flutterTts = FlutterTts();
+  FlutterTts? _flutterTts;
   
   /// هل تم تهيئة الخدمة؟
   bool _isInitialized = false;
   
   /// هل الخدمة تستمع حالياً؟
   bool _isListening = false;
+  
+  /// Timer لتتبع عدم الاستخدام
+  Timer? _idleTimer;
+  
+  /// مدة عدم الاستخدام قبل تحرير الموارد (5 دقائق)
+  static const _idleTimeout = Duration(minutes: 5);
 
   /// تهيئة خدمة التعرف على الصوت
   /// 
   /// يطلب إذن الميكروفون ويهيئ محركات STT و TTS
+  /// يبدء idle timer لتحرير الموارد تلقائياً
   /// 
   /// Returns: true إذا نجحت التهيئة، false إذا فشلت
   /// 
@@ -47,7 +58,10 @@ class SpeechService {
   /// }
   /// ```
   Future<bool> initialize() async {
-    if (_isInitialized) return true;
+    if (_isInitialized) {
+      _resetIdleTimer();
+      return true;
+    }
 
     try {
       // طلب الأذونات
@@ -56,23 +70,59 @@ class SpeechService {
         return false;
       }
 
+      // تهيئة المحركات
+      _speechToText = SpeechToText();
+      _flutterTts = FlutterTts();
+
       // تهيئة Speech to Text
-      final sttAvailable = await _speechToText.initialize(
-        onError: (error) => print('STT Error: $error'),
-        onStatus: (status) => print('STT Status: $status'),
+      final sttAvailable = await _speechToText!.initialize(
+        onError: (error) => debugPrint('STT Error: $error'),
+        onStatus: (status) => debugPrint('STT Status: $status'),
       );
 
       // تهيئة Text to Speech
-      await _flutterTts.setLanguage('ar-SA'); // Arabic
-      await _flutterTts.setSpeechRate(0.5);
-      await _flutterTts.setVolume(1.0);
-      await _flutterTts.setPitch(1.0);
+      await _flutterTts!.setLanguage('ar-SA'); // Arabic
+      await _flutterTts!.setSpeechRate(0.5);
+      await _flutterTts!.setVolume(1.0);
+      await _flutterTts!.setPitch(1.0);
 
       _isInitialized = sttAvailable;
+      
+      // بدء idle timer
+      _resetIdleTimer();
+      
       return _isInitialized;
     } catch (e) {
-      print('Speech Service initialization error: $e');
+      debugPrint('Speech Service initialization error: $e');
       return false;
+    }
+  }
+
+  /// إعادة تعيين idle timer
+  /// 
+  /// يلغي الـ timer القديم ويبدء timer جديد
+  void _resetIdleTimer() {
+    _idleTimer?.cancel();
+    _idleTimer = Timer(_idleTimeout, _releaseResources);
+  }
+
+  /// تحرير الموارد غير المستخدمة
+  /// 
+  /// يوقف المحركات ويفرغ الذاكرة
+  void _releaseResources() {
+    try {
+      _speechToText?.cancel();
+      _speechToText = null;
+      
+      _flutterTts?.stop();
+      _flutterTts = null;
+      
+      _isInitialized = false;
+      _isListening = false;
+      
+      debugPrint('Speech resources released due to inactivity');
+    } catch (e) {
+      debugPrint('Error releasing speech resources: $e');
     }
   }
 
@@ -83,6 +133,7 @@ class SpeechService {
   /// 
   /// يستمع لمدة 30 ثانية كحد أقصى
   /// يتوقف تلقائياً بعد 3 ثواني من الصمت
+  /// يعيد تعيين idle timer عند الاستخدام
   /// 
   /// مثال:
   /// ```dart
@@ -103,20 +154,24 @@ class SpeechService {
       }
     }
 
-    if (_isListening) return;
+    if (_isListening || _speechToText == null) return;
 
     try {
-      await _speechToText.listen(
+      await _speechToText!.listen(
         onResult: (result) {
           if (result.finalResult) {
+            _resetIdleTimer(); // إعادة تعيين timer عند كل نتيجة
             onResult(result.recognizedWords);
           }
         },
         listenFor: const Duration(seconds: 30),
         pauseFor: const Duration(seconds: 3),
+        // ignore: deprecated_member_use
         partialResults: false,
         localeId: 'ar-SA', // Arabic
+        // ignore: deprecated_member_use
         cancelOnError: true,
+        // ignore: deprecated_member_use
         listenMode: ListenMode.confirmation,
       );
       _isListening = true;
@@ -129,13 +184,14 @@ class SpeechService {
   /// 
   /// يوقف محرك التعرف على الصوت
   Future<void> stopListening() async {
-    if (!_isListening) return;
+    if (!_isListening || _speechToText == null) return;
     
     try {
-      await _speechToText.stop();
+      await _speechToText!.stop();
       _isListening = false;
+      _resetIdleTimer(); // إعادة تعيين timer عند الإيقاف
     } catch (e) {
-      print('Error stopping listening: $e');
+      debugPrint('Error stopping listening: $e');
     }
   }
 
@@ -144,16 +200,24 @@ class SpeechService {
   /// [text] النص المراد قراءته
   /// 
   /// يستخدم اللغة العربية وسرعة قراءة متوسطة
+  /// يعيد تعيين idle timer عند الاستخدام
   /// 
   /// مثال:
   /// ```dart
   /// await service.speak('مرحباً بك');
   /// ```
   Future<void> speak(String text) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+    
+    if (_flutterTts == null) return;
+    
     try {
-      await _flutterTts.speak(text);
+      await _flutterTts!.speak(text);
+      _resetIdleTimer(); // إعادة تعيين timer عند الاستخدام
     } catch (e) {
-      print('Error speaking: $e');
+      debugPrint('Error speaking: $e');
     }
   }
 
@@ -161,10 +225,13 @@ class SpeechService {
   /// 
   /// يوقف محرك TTS فوراً
   Future<void> stopSpeaking() async {
+    if (_flutterTts == null) return;
+    
     try {
-      await _flutterTts.stop();
+      await _flutterTts!.stop();
+      _resetIdleTimer(); // إعادة تعيين timer عند الإيقاف
     } catch (e) {
-      print('Error stopping speech: $e');
+      debugPrint('Error stopping speech: $e');
     }
   }
 
@@ -256,8 +323,6 @@ class SpeechService {
   /// [command] الأمر الكامل
   /// Returns: نص المهمة بدون كلمات الأوامر
   String _extractTaskFromCommand(String command) {
-    final lowerCommand = command.toLowerCase();
-    
     // إزالة كلمات الأوامر
     final commandWords = ['أضف', 'اضف', 'add', 'create', 'new', 'مهمة', 'task'];
     String result = command;
@@ -276,8 +341,6 @@ class SpeechService {
   /// [command] الأمر الكامل
   /// Returns: نص البحث
   String _extractSearchQuery(String command) {
-    final lowerCommand = command.toLowerCase();
-    
     // إزالة كلمات البحث
     final searchWords = ['ابحث', 'بحث', 'search', 'find', 'عن', 'about'];
     String result = command;
@@ -296,14 +359,57 @@ class SpeechService {
   bool get isInitialized => _isInitialized;
   
   /// هل خدمة التعرف على الصوت متاحة؟
-  bool get isAvailable => _speechToText.isAvailable;
+  bool get isAvailable => _speechToText?.isAvailable ?? false;
+
+  /// تعيين سرعة القراءة
+  /// 
+  /// [rate] سرعة القراءة (0.0 - 1.0)
+  Future<void> setSpeechRate(double rate) async {
+    if (_flutterTts == null) return;
+    
+    try {
+      await _flutterTts!.setSpeechRate(rate);
+      _resetIdleTimer(); // إعادة تعيين timer عند الاستخدام
+    } catch (e) {
+      debugPrint('Error setting speech rate: $e');
+    }
+  }
+
+  /// تعيين مستوى الصوت
+  /// 
+  /// [volume] مستوى الصوت (0.0 - 1.0)
+  Future<void> setVolume(double volume) async {
+    if (_flutterTts == null) return;
+    
+    try {
+      await _flutterTts!.setVolume(volume);
+      _resetIdleTimer(); // إعادة تعيين timer عند الاستخدام
+    } catch (e) {
+      debugPrint('Error setting volume: $e');
+    }
+  }
+
+  /// تعيين نبرة الصوت
+  /// 
+  /// [pitch] نبرة الصوت (0.5 - 2.0)
+  Future<void> setPitch(double pitch) async {
+    if (_flutterTts == null) return;
+    
+    try {
+      await _flutterTts!.setPitch(pitch);
+      _resetIdleTimer(); // إعادة تعيين timer عند الاستخدام
+    } catch (e) {
+      debugPrint('Error setting pitch: $e');
+    }
+  }
 
   /// تنظيف الموارد وإيقاف جميع العمليات
   /// 
   /// يجب استدعاؤها عند الانتهاء من استخدام الخدمة
+  /// يلغي idle timer ويحرر جميع الموارد
   void dispose() {
-    _speechToText.cancel();
-    _flutterTts.stop();
+    _idleTimer?.cancel();
+    _releaseResources();
   }
 }
 

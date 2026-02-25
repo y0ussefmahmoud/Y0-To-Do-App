@@ -57,37 +57,41 @@ class _VoiceInputButtonState extends ConsumerState<VoiceInputButton> {
     final voiceState = ref.watch(voiceProvider);
     final voiceNotifier = ref.read(voiceProvider.notifier);
 
-    return GestureDetector(
-      onTap: () => _handleVoiceInput(voiceNotifier),
-      child: Container(
-        width: widget.isCompact ? 40 : 56,
-        height: widget.isCompact ? 40 : 56,
-        decoration: BoxDecoration(
-          color: voiceState.isListening 
-              ? Colors.red.withOpacity(0.9)
-              : Theme.of(context).primaryColor,
-          borderRadius: BorderRadius.circular(widget.isCompact ? 20 : 28),
-          boxShadow: [
-            BoxShadow(
-              color: (voiceState.isListening ? Colors.red : Theme.of(context).primaryColor)
-                  .withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Icon(
-          voiceState.isListening ? Icons.mic : Icons.mic_none,
-          color: Colors.white,
-          size: widget.isCompact ? 20 : 24,
-        ),
-      ).animate(target: voiceState.isListening ? 1 : 0)
-        .scale(duration: 200.ms)
-        .then()
-        .shimmer(
-          duration: 1000.ms,
-          color: Colors.white.withOpacity(0.5),
-        ),
+    return Semantics(
+      label: 'إدخال صوتي، ${voiceState.isListening ? 'يستمع' : 'جاهز'}',
+      button: true,
+      child: GestureDetector(
+        onTap: () => _handleVoiceInput(voiceNotifier),
+        child: Container(
+          width: widget.isCompact ? 40 : 56,
+          height: widget.isCompact ? 40 : 56,
+          decoration: BoxDecoration(
+            color: voiceState.isListening 
+                ? Colors.red.withValues(alpha: 0.9)
+                : Theme.of(context).primaryColor,
+            borderRadius: BorderRadius.circular(widget.isCompact ? 20 : 28),
+            boxShadow: [
+              BoxShadow(
+                color: (voiceState.isListening ? Colors.red : Theme.of(context).primaryColor)
+                    .withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(
+            voiceState.isListening ? Icons.mic : Icons.mic_none,
+            color: Colors.white,
+            size: widget.isCompact ? 20 : 24,
+          ),
+        ).animate(target: voiceState.isListening ? 1 : 0)
+          .scale(duration: 200.ms)
+          .then()
+          .shimmer(
+            duration: 1000.ms,
+            color: Colors.white.withValues(alpha: 0.5),
+          ),
+      ),
     );
   }
 

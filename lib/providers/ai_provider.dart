@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/ai_service.dart';
 import '../services/speech_service.dart';
+import '../services/notification_service.dart';
 
 /// Provider لخدمة الذكاء الاصطناعي (AI Service)
 /// 
@@ -16,6 +18,17 @@ final aiServiceProvider = Provider<AIService>((ref) {
 /// يدعم التعرف على الصوت وتحويل النص إلى كلام
 final speechServiceProvider = Provider<SpeechService>((ref) {
   return SpeechService();
+});
+
+/// Provider لخدمة الإشعارات (Notification Service)
+/// 
+/// يوفر instance من NotificationService للتعامل مع الإشعارات المحلية
+/// يدعم جدولة الإشعارات والتفاعل معها
+final notificationServiceProvider = Provider<NotificationService>((ref) {
+  final service = NotificationService();
+  // تعيين الـ Ref للوصول إلى providers من داخل الخدمة
+  NotificationService.setRef(ref);
+  return service;
 });
 
 /// حالة التعرف على الصوت (Voice State)
@@ -145,6 +158,12 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   VoiceCommand processCommand(String text) {
     return _speechService.processVoiceCommand(text);
   }
+
+  @override
+  void dispose() {
+    _speechService.dispose();
+    super.dispose();
+  }
 }
 
 /// Provider الرئيسي لإدارة الصوت
@@ -198,12 +217,31 @@ class SmartSuggestionsState {
 /// 
 /// يستخدم AI Service لتوليد اقتراحات ذكية للمهام
 /// بناءً على المهام السابقة والوقت الحالي
+/// يقوم بتحديث الاقتراحات تلقائياً كل ساعة
 class SmartSuggestionsNotifier extends StateNotifier<SmartSuggestionsState> {
   /// خدمة الذكاء الاصطناعي
   final AIService _aiService;
+  
+  /// Timer لتحديث الاقتراحات تلقائياً
+  Timer? _refreshTimer;
+  
+  /// قائمة المهام الأخيرة للتحديث التلقائي
+  List<String> _lastRecentTasks = [];
 
   /// Constructor يستقبل AIService
-  SmartSuggestionsNotifier(this._aiService) : super(SmartSuggestionsState());
+  SmartSuggestionsNotifier(this._aiService) : super(SmartSuggestionsState()) {
+    // بدء الـ Timer للتحديث كل ساعة
+    _startRefreshTimer();
+  }
+
+  /// بدء Timer للتحديث التلقائي
+  void _startRefreshTimer() {
+    _refreshTimer = Timer.periodic(const Duration(hours: 1), (timer) {
+      if (_lastRecentTasks.isNotEmpty) {
+        loadSuggestions(_lastRecentTasks);
+      }
+    });
+  }
 
   /// تحميل الاقتراحات الذكية
   /// 
@@ -211,6 +249,7 @@ class SmartSuggestionsNotifier extends StateNotifier<SmartSuggestionsState> {
   /// 
   /// يستخدم AI لتوليد اقتراحات بناءً على السياق والوقت
   void loadSuggestions(List<String> recentTasks) {
+    _lastRecentTasks = recentTasks; // حفظ للتحديث التلقائي
     state = state.copyWith(isLoading: true);
     
     final suggestions = _aiService.getSmartSuggestions(recentTasks);
@@ -219,6 +258,16 @@ class SmartSuggestionsNotifier extends StateNotifier<SmartSuggestionsState> {
       suggestions: suggestions,
       isLoading: false,
     );
+  }
+
+  /// تحديث الاقتراحات يدوياً
+  /// 
+  /// يقوم بمسح الـ Cache وإعادة تحميل الاقتراحات
+  void refreshSuggestions() {
+    _aiService.clearCache();
+    if (_lastRecentTasks.isNotEmpty) {
+      loadSuggestions(_lastRecentTasks);
+    }
   }
 
   /// تحليل نص المهمة
@@ -235,6 +284,13 @@ class SmartSuggestionsNotifier extends StateNotifier<SmartSuggestionsState> {
   /// Returns: ProductivityAnalysis يحتوي على النقاط والاقتراحات
   ProductivityAnalysis analyzeProductivity(List<Map<String, dynamic>> completedTasks) {
     return _aiService.analyzeProductivity(completedTasks);
+  }
+
+  /// إلغاء الـ Timer عند التخلص من الـ Provider
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 }
 

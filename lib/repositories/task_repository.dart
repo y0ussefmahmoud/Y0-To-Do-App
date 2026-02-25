@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 
 import '../models/task.dart';
+import '../utils/error_handler.dart';
 
 /// مستودع المهام (Task Repository)
 /// 
@@ -34,13 +35,20 @@ class TaskRepository {
   /// 
   /// Returns: قائمة بجميع المهام المخزنة
   /// 
+  /// Throws: [StorageException] في حالة فشل القراءة
+  /// 
   /// مثال:
   /// ```dart
   /// final allTasks = repository.getAll();
   /// print('عدد المهام: ${allTasks.length}');
   /// ```
   List<Task> getAll() {
-    return _box.values.toList();
+    try {
+      return _box.values.toList();
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, context: 'TaskRepository.getAll');
+      throw StorageException('getAll', 'Failed to read tasks from storage: $e');
+    }
   }
 
   /// إضافة مهمة جديدة إلى قاعدة البيانات
@@ -48,6 +56,7 @@ class TaskRepository {
   /// [task] المهمة المراد إضافتها
   /// 
   /// يستخدم معرف المهمة (task.id) كمفتاح في Hive
+  /// Throws: [StorageException] في حالة فشل الإضافة
   /// 
   /// مثال:
   /// ```dart
@@ -58,7 +67,26 @@ class TaskRepository {
   /// await repository.add(newTask);
   /// ```
   Future<void> add(Task task) async {
-    await _box.put(task.id, task);
+    try {
+      if (task.id.isEmpty) {
+        throw TaskRepositoryException('Task ID cannot be empty');
+      }
+      
+      if (task.title.isEmpty) {
+        throw TaskRepositoryException('Task title cannot be empty');
+      }
+      
+      await _box.put(task.id, task);
+      ErrorHandler.logSuccess('Task added to storage: ${task.title}');
+    } catch (e, stackTrace) {
+      if (e is TaskRepositoryException) {
+        ErrorHandler.handleError(e, stackTrace, context: 'TaskRepository.add.validation');
+        rethrow;
+      }
+      
+      ErrorHandler.handleError(e, stackTrace, context: 'TaskRepository.add');
+      throw StorageException('add', 'Failed to add task to storage: $e');
+    }
   }
 
   /// تحديث مهمة موجودة في قاعدة البيانات
@@ -66,6 +94,7 @@ class TaskRepository {
   /// [task] المهمة المراد تحديثها (يجب أن تحتوي على نفس الـ id)
   /// 
   /// إذا كانت المهمة غير موجودة، سيتم إضافتها
+  /// Throws: [StorageException] في حالة فشل التحديث
   /// 
   /// مثال:
   /// ```dart
@@ -75,29 +104,76 @@ class TaskRepository {
   /// await repository.update(updatedTask);
   /// ```
   Future<void> update(Task task) async {
-    await _box.put(task.id, task);
+    try {
+      if (task.id.isEmpty) {
+        throw TaskRepositoryException('Task ID cannot be empty');
+      }
+      
+      if (task.title.isEmpty) {
+        throw TaskRepositoryException('Task title cannot be empty');
+      }
+      
+      // التحقق من وجود المهمة
+      final existingTask = _box.get(task.id);
+      if (existingTask == null) {
+        throw TaskNotFoundException(task.id);
+      }
+      
+      await _box.put(task.id, task);
+      ErrorHandler.logSuccess('Task updated in storage: ${task.title}');
+    } catch (e, stackTrace) {
+      if (e is TaskRepositoryException || e is TaskNotFoundException) {
+        ErrorHandler.handleError(e, stackTrace, context: 'TaskRepository.update.validation');
+        rethrow;
+      }
+      
+      ErrorHandler.handleError(e, stackTrace, context: 'TaskRepository.update');
+      throw StorageException('update', 'Failed to update task in storage: $e');
+    }
   }
 
   /// حذف مهمة من قاعدة البيانات
   /// 
   /// [id] معرف المهمة المراد حذفها
   /// 
-  /// إذا كانت المهمة غير موجودة، لن يحدث شيء
+  /// Throws: [TaskNotFoundException] إذا كانت المهمة غير موجودة
+  /// Throws: [StorageException] في حالة فشل الحذف
   /// 
   /// مثال:
   /// ```dart
   /// await repository.delete('task-id-123');
   /// ```
   Future<void> delete(String id) async {
-    await _box.delete(id);
+    try {
+      if (id.isEmpty) {
+        throw TaskRepositoryException('Task ID cannot be empty');
+      }
+      
+      // التحقق من وجود المهمة
+      final existingTask = _box.get(id);
+      if (existingTask == null) {
+        throw TaskNotFoundException(id);
+      }
+      
+      await _box.delete(id);
+      ErrorHandler.logSuccess('Task deleted from storage: $id');
+    } catch (e, stackTrace) {
+      if (e is TaskRepositoryException || e is TaskNotFoundException) {
+        ErrorHandler.handleError(e, stackTrace, context: 'TaskRepository.delete.validation');
+        rethrow;
+      }
+      
+      ErrorHandler.handleError(e, stackTrace, context: 'TaskRepository.delete');
+      throw StorageException('delete', 'Failed to delete task from storage: $e');
+    }
   }
 
   /// تبديل حالة إنجاز المهمة (مكتملة/غير مكتملة)
   /// 
   /// [id] معرف المهمة المراد تبديل حالتها
   /// 
-  /// إذا كانت المهمة مكتملة، ستصبح غير مكتملة والعكس صحيح
-  /// إذا كانت المهمة غير موجودة، لن يحدث شيء
+  /// Throws: [TaskNotFoundException] إذا كانت المهمة غير موجودة
+  /// Throws: [StorageException] في حالة فشل التحديث
   /// 
   /// مثال:
   /// ```dart
@@ -105,9 +181,26 @@ class TaskRepository {
   /// await repository.toggleDone('task-id-123');
   /// ```
   Future<void> toggleDone(String id) async {
-    final task = _box.get(id);
-    if (task != null) {
+    try {
+      if (id.isEmpty) {
+        throw TaskRepositoryException('Task ID cannot be empty');
+      }
+      
+      final task = _box.get(id);
+      if (task == null) {
+        throw TaskNotFoundException(id);
+      }
+      
       await _box.put(id, task.copyWith(isDone: !task.isDone));
+      ErrorHandler.logSuccess('Task status toggled in storage: $id');
+    } catch (e, stackTrace) {
+      if (e is TaskRepositoryException || e is TaskNotFoundException) {
+        ErrorHandler.handleError(e, stackTrace, context: 'TaskRepository.toggleDone.validation');
+        rethrow;
+      }
+      
+      ErrorHandler.handleError(e, stackTrace, context: 'TaskRepository.toggleDone');
+      throw StorageException('toggleDone', 'Failed to toggle task status in storage: $e');
     }
   }
 }
