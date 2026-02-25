@@ -9,10 +9,89 @@ import '../providers/task_provider.dart';
 class TaskFilterChips extends ConsumerWidget {
   const TaskFilterChips({super.key});
 
+  void _handleFilterSelection(String value, TaskFilter filter, StateController<TaskFilter> filterNotifier) {
+    switch (value) {
+      case 'status_all':
+        filterNotifier.state = filter.copyWith(clearStatus: true);
+        break;
+      case 'status_pending':
+        filterNotifier.state = filter.copyWith(status: TaskStatus.pending);
+        break;
+      case 'status_completed':
+        filterNotifier.state = filter.copyWith(status: TaskStatus.completed);
+        break;
+      case 'priority_all':
+        filterNotifier.state = filter.copyWith(clearPriority: true);
+        break;
+      case 'priority_high':
+        filterNotifier.state = filter.copyWith(priority: 2);
+        break;
+      case 'priority_medium':
+        filterNotifier.state = filter.copyWith(priority: 1);
+        break;
+      case 'priority_low':
+        filterNotifier.state = filter.copyWith(priority: 0);
+        break;
+      case 'date_all':
+        filterNotifier.state = filter.copyWith(clearDateFilter: true);
+        break;
+      case 'date_today':
+        filterNotifier.state = filter.copyWith(dateFilter: DateFilter.today);
+        break;
+      case 'date_week':
+        filterNotifier.state = filter.copyWith(dateFilter: DateFilter.thisWeek);
+        break;
+      case 'category_all':
+        filterNotifier.state = filter.copyWith(clearCategory: true);
+        break;
+      case 'reset':
+        filterNotifier.state = filter.reset();
+        break;
+      default:
+        // Handle category filters (format: 'category_categoryName')
+        if (value.startsWith('category_')) {
+          final categoryName = value.substring(9); // Remove 'category_' prefix
+          final category = TaskCategory.values.firstWhere(
+            (cat) => cat.name == categoryName,
+            orElse: () => TaskCategory.personal,
+          );
+          filterNotifier.state = filter.copyWith(category: category);
+        }
+        break;
+    }
+  }
+
+  String _getPriorityLabel(int priority) {
+    switch (priority) {
+      case 0:
+        return 'منخفضة';
+      case 1:
+        return 'متوسطة';
+      case 2:
+        return 'عالية';
+      default:
+        return 'غير محدد';
+    }
+  }
+
+  Color _getPriorityColor(int priority) {
+    switch (priority) {
+      case 0:
+        return Colors.green;
+      case 1:
+        return Colors.orange;
+      case 2:
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(taskFilterProvider);
     final filterNotifier = ref.read(taskFilterProvider.notifier);
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -62,51 +141,273 @@ class TaskFilterChips extends ConsumerWidget {
                     ),
                   ),
                 ],
+                const Spacer(),
+                // Hamburger menu for small screens
+                if (isSmallScreen)
+                  PopupMenuButton<String>(
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    tooltip: 'خيارات التصفية',
+                    onSelected: (value) {
+                      _handleFilterSelection(value, filter, filterNotifier);
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'status_all',
+                        child: Row(
+                          children: [
+                            Icon(Icons.filter_list, size: 16),
+                            const SizedBox(width: 8),
+                            const Text('الحالة: الكل'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'status_pending',
+                        child: Row(
+                          children: [
+                            Icon(Icons.schedule, size: 16),
+                            const SizedBox(width: 8),
+                            const Text('الحالة: معلقة'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'status_completed',
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle, size: 16),
+                            const SizedBox(width: 8),
+                            const Text('الحالة: مكتملة'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: 'priority_all',
+                        child: Row(
+                          children: [
+                            Icon(Icons.flag, size: 16),
+                            const SizedBox(width: 8),
+                            const Text('الأولوية: الكل'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'priority_high',
+                        child: Row(
+                          children: [
+                            Icon(Icons.priority_high, size: 16, color: Colors.red),
+                            const SizedBox(width: 8),
+                            const Text('الأولوية: عالية'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'priority_medium',
+                        child: Row(
+                          children: [
+                            Icon(Icons.remove, size: 16, color: Colors.orange),
+                            const SizedBox(width: 8),
+                            const Text('الأولوية: متوسطة'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'priority_low',
+                        child: Row(
+                          children: [
+                            Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.green),
+                            const SizedBox(width: 8),
+                            const Text('الأولوية: منخفضة'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: 'date_all',
+                        child: Row(
+                          children: [
+                            Icon(Icons.date_range, size: 16),
+                            const SizedBox(width: 8),
+                            const Text('التاريخ: الكل'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'date_today',
+                        child: Row(
+                          children: [
+                            Icon(Icons.today, size: 16),
+                            const SizedBox(width: 8),
+                            const Text('التاريخ: اليوم'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'date_week',
+                        child: Row(
+                          children: [
+                            Icon(Icons.view_week, size: 16),
+                            const SizedBox(width: 8),
+                            const Text('التاريخ: هذا الأسبوع'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: 'category_all',
+                        child: Row(
+                          children: [
+                            Icon(Icons.category, size: 16),
+                            const SizedBox(width: 8),
+                            const Text('التصنيف: الكل'),
+                          ],
+                        ),
+                      ),
+                      ...TaskCategory.values.map((category) => PopupMenuItem(
+                        value: 'category_${category.name}',
+                        child: Row(
+                          children: [
+                            Icon(category.icon, size: 16, color: category.color),
+                            const SizedBox(width: 8),
+                            Text('التصنيف: ${category.displayName}'),
+                          ],
+                        ),
+                      )),
+                      if (filter.isActive) ...[
+                        const PopupMenuDivider(),
+                        PopupMenuItem(
+                          value: 'reset',
+                          child: Row(
+                            children: [
+                              Icon(Icons.refresh, size: 16),
+                              const SizedBox(width: 8),
+                              const Text('إعادة تعيين الفلاتر'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
               ],
             ),
           ),
 
-          // الفلاتر الأفقية
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minWidth: MediaQuery.of(context).size.width - 32,
-              ),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.start,
-                children: [
-                  // الحالة
-                  _buildCompactStatusFilters(filter, filterNotifier, context),
-                  
-                  // الأولوية
-                  _buildCompactPriorityFilters(filter, filterNotifier, context),
-                  
-                  // التصنيف
-                  _buildCompactCategoryFilters(filter, filterNotifier, context),
-                  
-                  // التاريخ
-                  _buildCompactDateFilters(filter, filterNotifier, context),
-                ],
-              ),
-            ),
-          ),
-
-          // زر إعادة تعيين الفلاتر
-          if (filter.isActive)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: TextButton.icon(
-                onPressed: () => filterNotifier.state = filter.reset(),
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('إعادة تعيين الفلاتر'),
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).primaryColor,
+          // Show full filters on larger screens, hide on small screens
+          if (!isSmallScreen) ...[
+            // الفلاتر الأفقية
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: MediaQuery.of(context).size.width - 32,
+                ),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.start,
+                  children: [
+                    // الحالة
+                    _buildCompactStatusFilters(filter, filterNotifier, context),
+                    
+                    // الأولوية
+                    _buildCompactPriorityFilters(filter, filterNotifier, context),
+                    
+                    // التصنيف
+                    _buildCompactCategoryFilters(filter, filterNotifier, context),
+                    
+                    // التاريخ
+                    _buildCompactDateFilters(filter, filterNotifier, context),
+                  ],
                 ),
               ),
             ),
+
+            // زر إعادة تعيين الفلاتر
+            if (filter.isActive)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: TextButton.icon(
+                  onPressed: () => filterNotifier.state = filter.reset(),
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('إعادة تعيين الفلاتر'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ),
+          ] else ...[
+            // Show current active filters as chips on small screens
+            if (filter.isActive)
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  if (filter.status != null)
+                    Chip(
+                      label: Text('الحالة: ${filter.status!.displayName}'),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      onDeleted: () {
+                        filterNotifier.state = filter.copyWith(clearStatus: true);
+                      },
+                      backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      labelStyle: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                  if (filter.priority != null)
+                    Chip(
+                      label: Text('الأولوية: ${_getPriorityLabel(filter.priority!)}'),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      onDeleted: () {
+                        filterNotifier.state = filter.copyWith(clearPriority: true);
+                      },
+                      backgroundColor: _getPriorityColor(filter.priority!).withValues(alpha: 0.1),
+                      labelStyle: TextStyle(
+                        color: _getPriorityColor(filter.priority!),
+                        fontSize: 12,
+                      ),
+                    ),
+                  if (filter.category != null)
+                    Chip(
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(filter.category!.icon, size: 12),
+                          const SizedBox(width: 4),
+                          Text(filter.category!.displayName),
+                        ],
+                      ),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      onDeleted: () {
+                        filterNotifier.state = filter.copyWith(clearCategory: true);
+                      },
+                      backgroundColor: filter.category!.color.withValues(alpha: 0.1),
+                      labelStyle: TextStyle(
+                        color: filter.category!.color,
+                        fontSize: 12,
+                      ),
+                    ),
+                  if (filter.dateFilter != null)
+                    Chip(
+                      label: Text('التاريخ: ${filter.dateFilter!.displayName}'),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      onDeleted: () {
+                        filterNotifier.state = filter.copyWith(clearDateFilter: true);
+                      },
+                      backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      labelStyle: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+          ],
         ],
       ),
     ).animate().fadeIn().slideY(begin: -0.1, duration: 300.ms);
