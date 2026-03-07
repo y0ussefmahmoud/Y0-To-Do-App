@@ -472,7 +472,15 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
   @override
   void initState() {
     super.initState();
-    _initializeNotificationService();
+    // Removed notification initialization from here
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_notificationInitialized) {
+      _initializeNotificationService();
+    }
   }
 
   Future<void> _initializeNotificationService() async {
@@ -482,7 +490,7 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
       notificationService.setNavigatorKey(appNavigatorKey);
       
       // تعيين الـ ref للوصول إلى providers
-      notificationService.setRef(ref as Ref);
+      notificationService.setRef(ref);
       
       // تهيئة خدمة الإشعارات
       final notificationInitialized = await notificationService.initialize();

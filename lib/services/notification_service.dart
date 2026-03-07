@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -43,7 +42,7 @@ class NotificationService {
   static GlobalKey<NavigatorState>? navigatorKey;
   
   /// Reference للوصول إلى providers
-  static Ref? ref;
+  static dynamic ref;
 
   /// تهيئة خدمة الإشعارات
   /// 
@@ -95,7 +94,7 @@ class NotificationService {
       AndroidInitializationSettings? androidInitializationSettings;
       try {
         androidInitializationSettings = const AndroidInitializationSettings(
-          'ic_launcher',
+          '@mipmap/ic_launcher',
         );
         debugPrint('✅ تم إعداد Android settings بنجاح');
       } catch (e) {
@@ -255,7 +254,7 @@ class NotificationService {
             priority: Priority.high,
             enableVibration: true,
             playSound: true,
-            icon: 'ic_launcher',
+            icon: null,
             actions: [
               AndroidNotificationAction(
                 'complete',
@@ -343,7 +342,7 @@ class NotificationService {
             priority: Priority.max,
             enableVibration: true,
             playSound: true,
-            icon: 'ic_launcher',
+            icon: null,
             actions: [
               AndroidNotificationAction(
                 'complete',
@@ -450,7 +449,7 @@ class NotificationService {
             priority: Priority.high,
             enableVibration: true,
             playSound: true,
-            icon: 'ic_launcher',
+            icon: null,
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -714,7 +713,7 @@ class NotificationService {
             priority: Priority.high,
             enableVibration: true,
             playSound: true,
-            icon: 'ic_launcher',
+            icon: null,
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -812,7 +811,7 @@ class NotificationService {
   /// تعيين Reference للوصول إلى providers
   /// 
   /// يجب استدعاؤها بعد تهيئة ProviderScope
-  void setRef(Ref providerRef) {
+  void setRef(dynamic providerRef) {
     ref = providerRef;
   }
 }

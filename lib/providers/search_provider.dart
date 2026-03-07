@@ -52,11 +52,13 @@ class SearchNotifier extends StateNotifier<SearchState> {
   }
 
   void _loadSearchHistory() {
-    if (_historyBox == null) return;
+    if (_historyBox == null || !mounted) return;
     
     final history = _historyBox.values.toList()
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    state = state.copyWith(searchHistory: history);
+    if (mounted) {
+      state = state.copyWith(searchHistory: history);
+    }
   }
 
   void updateQuery(String query, [List<Task>? allTasks]) {
@@ -65,20 +67,25 @@ class SearchNotifier extends StateNotifier<SearchState> {
     // Debounce search while typing
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
       if (query.isNotEmpty && allTasks != null) {
         performSearch(query, allTasks);
       } else if (query.isNotEmpty) {
-        state = state.copyWith(isSearching: true);
+        if (mounted) {
+          state = state.copyWith(isSearching: true);
+        }
       }
     });
   }
 
   Future<void> performSearch(String query, List<Task> allTasks) async {
+    if (!mounted) return;
     if (query.trim().isEmpty) {
       clearSearch();
       return;
     }
 
+    if (!mounted) return;
     state = state.copyWith(isSearching: true);
 
     try {
@@ -114,63 +121,80 @@ class SearchNotifier extends StateNotifier<SearchState> {
           }
         }
 
-        _loadSearchHistory();
+        if (mounted) {
+          _loadSearchHistory();
+        }
       }
 
-      state = state.copyWith(
-        searchResults: rankedResults,
-        isSearching: false,
-      );
+      if (mounted) {
+        state = state.copyWith(
+          searchResults: rankedResults,
+          isSearching: false,
+        );
+      }
     } catch (e) {
       // If AI ranking fails, show filtered results without ranking
-      state = state.copyWith(
-        searchResults: allTasks.where((task) {
-          final searchLower = query.toLowerCase();
-          return task.title.toLowerCase().contains(searchLower) ||
-                 (task.note?.toLowerCase().contains(searchLower) ?? false) ||
-                 task.safeCategory.displayName.toLowerCase().contains(searchLower);
-        }).toList(),
-        isSearching: false,
-      );
+      if (mounted) {
+        state = state.copyWith(
+          searchResults: allTasks.where((task) {
+            final searchLower = query.toLowerCase();
+            return task.title.toLowerCase().contains(searchLower) ||
+                   (task.note?.toLowerCase().contains(searchLower) ?? false) ||
+                   task.safeCategory.displayName.toLowerCase().contains(searchLower);
+          }).toList(),
+          isSearching: false,
+        );
+      }
     }
   }
 
   void clearSearch() {
     _debounceTimer?.cancel();
-    state = state.copyWith(
-      query: '',
-      isSearching: false,
-      searchResults: [],
-    );
+    if (mounted) {
+      state = state.copyWith(
+        query: '',
+        isSearching: false,
+        searchResults: [],
+      );
+    }
   }
 
   Future<void> deleteHistoryItem(String id) async {
     if (_historyBox != null) {
       await _historyBox.delete(id);
-      _loadSearchHistory();
+      if (mounted) {
+        _loadSearchHistory();
+      }
     }
   }
 
   Future<void> clearAllHistory() async {
     if (_historyBox != null) {
       await _historyBox.clear();
-      state = state.copyWith(searchHistory: []);
+      if (mounted) {
+        state = state.copyWith(searchHistory: []);
+      }
     }
   }
 
   Future<void> loadSmartSuggestions(List<Task> tasks) async {
+    if (!mounted) return;
     try {
       final suggestions = await _aiService.generateSearchSuggestions(tasks);
-      state = state.copyWith(suggestions: suggestions);
+      if (mounted) {
+        state = state.copyWith(suggestions: suggestions);
+      }
     } catch (e) {
       // If AI fails, provide basic suggestions
-      state = state.copyWith(suggestions: [
-        'مهام اليوم',
-        'مهام متأخرة',
-        'مهام عالية الأولوية',
-        'مهام الغد',
-        'مهام هذا الأسبوع',
-      ]);
+      if (mounted) {
+        state = state.copyWith(suggestions: [
+          'مهام اليوم',
+          'مهام متأخرة',
+          'مهام عالية الأولوية',
+          'مهام الغد',
+          'مهام هذا الأسبوع',
+        ]);
+      }
     }
   }
 

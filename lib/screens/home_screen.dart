@@ -485,7 +485,10 @@ class HomeScreen extends ConsumerWidget {
                 
                 // Only load suggestions if not already loading and suggestions are empty
                 if (suggestions.suggestions.isEmpty && !suggestions.isLoading) {
-                  ref.read(smartSuggestionsProvider.notifier).loadSuggestions([]);
+                  // Delay the state modification to avoid modifying provider during widget build
+                  Future(() {
+                    ref.read(smartSuggestionsProvider.notifier).loadSuggestions([]);
+                  });
                   return const Text('جاري تحميل الاقتراحات...');
                 }
                 

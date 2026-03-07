@@ -46,6 +46,7 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget>
 
     // Load smart suggestions when widget is created
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final tasks = ref.read(tasksProvider);
       ref.read(searchProvider.notifier).loadSmartSuggestions(tasks);
     });

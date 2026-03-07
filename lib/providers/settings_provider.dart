@@ -16,8 +16,15 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   SettingsNotifier(this._box, this._ref) : super(_getInitialSettings(_box));
 
   static AppSettings _getInitialSettings(Box<AppSettings> box) {
-    if (box.isNotEmpty) {
-      return box.getAt(0) ?? const AppSettings();
+    try {
+      if (box.isNotEmpty) {
+        final settings = box.getAt(0);
+        if (settings != null) {
+          return settings;
+        }
+      }
+    } catch (e) {
+      // If there's an error reading from box, use default settings
     }
     return const AppSettings();
   }
