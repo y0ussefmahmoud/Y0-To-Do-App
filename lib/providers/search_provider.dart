@@ -110,7 +110,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         
         if (allHistory.length > 20) {
           for (int i = 20; i < allHistory.length; i++) {
-            await allHistory[i].delete();
+            await _historyBox.delete(allHistory[i].id);
           }
         }
 
@@ -122,7 +122,16 @@ class SearchNotifier extends StateNotifier<SearchState> {
         isSearching: false,
       );
     } catch (e) {
-      state = state.copyWith(isSearching: false);
+      // If AI ranking fails, show filtered results without ranking
+      state = state.copyWith(
+        searchResults: allTasks.where((task) {
+          final searchLower = query.toLowerCase();
+          return task.title.toLowerCase().contains(searchLower) ||
+                 (task.note?.toLowerCase().contains(searchLower) ?? false) ||
+                 task.safeCategory.displayName.toLowerCase().contains(searchLower);
+        }).toList(),
+        isSearching: false,
+      );
     }
   }
 
@@ -191,6 +200,14 @@ final searchProvider = StateNotifierProvider<SearchNotifier, SearchState>((ref) 
 final searchResultsProvider = Provider<List<Task>>((ref) {
   final searchState = ref.watch(searchProvider);
   final filteredTasks = ref.watch(filteredTasksProvider);
+  
+  // Reset pagination when search is cleared (query becomes empty)
+  ref.listen(searchProvider, (previous, next) {
+    if ((previous?.query.isNotEmpty ?? false) && next.query.isEmpty) {
+      // Search was cleared, reset pagination
+      ref.read(currentPageProvider.notifier).state = 1;
+    }
+  });
   
   if (searchState.query.isNotEmpty) {
     return searchState.searchResults;

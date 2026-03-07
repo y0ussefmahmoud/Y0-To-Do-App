@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable, prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -36,22 +38,6 @@ Future<void> main() async {
   ErrorHandler.logInfo('Starting Y0 To-Do App initialization');
 
   try {
-    // Initialize notification service with better error handling
-    NotificationService.setNavigatorKey(appNavigatorKey);
-    
-    try {
-      final notificationService = NotificationService();
-      final notificationInitialized = await notificationService.initialize();
-      if (notificationInitialized) {
-        ErrorHandler.logSuccess('Notification service initialized');
-      } else {
-        ErrorHandler.logWarning('Notification service failed to initialize - app will continue without notifications');
-      }
-    } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, context: 'Notification service initialization failed');
-      // Continue without notifications
-    }
-
     // Initialize Hive with comprehensive error handling
     try {
       ErrorHandler.logInfo('Initializing Hive...');
@@ -158,7 +144,8 @@ Future<void> main() async {
 
     // Check for pending navigation from background notifications
     try {
-      await NotificationService.checkPendingNavigation();
+      final notificationService = NotificationService();
+      await notificationService.checkPendingNavigation();
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, context: 'Failed to check pending navigation');
       // Continue - not critical
@@ -172,9 +159,7 @@ Future<void> main() async {
           Hive.box<AppSettings>('settingsBox'),
         ),
       ],
-      child: const ErrorBoundary(
-        child: MyApp(),
-      ),
+      child: AppInitializer(),
     ));
   } catch (e, stackTrace) {
     ErrorHandler.handleError(e, stackTrace, context: 'App initialization');
@@ -222,9 +207,10 @@ class MyApp extends ConsumerWidget {
   /// يحتوي على تخصيص شامل للألوان والأشكال
   /// يستخدم Material 3 design
   /// يحسن contrast ratio للـ accessibility
+  /// يستخدم ألوان حديثة ومناسبة للـ UI
   ThemeData _buildLightTheme() {
-    const primaryColor = Color(0xFF6366F1); // Indigo
-    const backgroundColor = Color(0xFFF8FAFC);
+    const primaryColor = Color(0xFF66BB6A); // أزرق أفتح وأحدث
+    const backgroundColor = Color(0xFFF8FAFC); // أبيض نقي
     
     return ThemeData(
       useMaterial3: true,
@@ -381,15 +367,15 @@ class MyApp extends ConsumerWidget {
         fillColor: const Color(0xFFF1F5F9),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderSide: BorderSide(color: const Color(0xFF66BB6A)), // نفس لون الـ primary
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderSide: BorderSide(color: const Color(0xFF66BB6A)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
+          borderSide: const BorderSide(color: Color(0xFF66BB6A), width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
@@ -398,7 +384,7 @@ class MyApp extends ConsumerWidget {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          backgroundColor: primaryColor,
+          backgroundColor: const Color(0xFF66BB6A), // نفس لون الـ primary
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -415,12 +401,13 @@ class MyApp extends ConsumerWidget {
 
   /// بناء الثيم الداكن
   /// 
-  /// يحتوي على تخصيص للوضع الليلي
+  /// يحتوي على تخصيص متقدم للوضع الليلي
   /// يستخدم Material 3 design
   /// يحسن contrast ratio للـ accessibility
+  /// يستخدم ألوان حديثة ومناسبة
   ThemeData _buildDarkTheme() {
-    const primaryColor = Color(0xFF6366F1);
-    const backgroundColor = Color(0xFF0F172A);
+    const primaryColor = Color(0xFF66BB6A); // أزرق أفتح للـ dark mode
+    const backgroundColor = Color(0xFF121212); // أسود داكن ناعم
     
     return ThemeData(
       useMaterial3: true,
@@ -461,8 +448,86 @@ class MyApp extends ConsumerWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        color: const Color(0xFF1E293B),
+        color: const Color(0xFF1E293B), // أزرق داكن للـ contrast
+        shadowColor: Colors.black.withValues(alpha: 0.3),
       ),
+    );
+  }
+}
+
+/// Widget لتهيئة التطبيق بعد ProviderScope
+/// 
+/// يقوم بتهيئة خدمة الإشعارات بعد إعداد ProviderScope
+/// لضمان توفر الـ ref للإشعارات
+class AppInitializer extends ConsumerStatefulWidget {
+  const AppInitializer({super.key});
+
+  @override
+  ConsumerState<AppInitializer> createState() => _AppInitializerState();
+}
+
+class _AppInitializerState extends ConsumerState<AppInitializer> {
+  bool _notificationInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotificationService();
+  }
+
+  Future<void> _initializeNotificationService() async {
+    try {
+      // تعيين مفتاح التنقل
+      final notificationService = NotificationService();
+      notificationService.setNavigatorKey(appNavigatorKey);
+      
+      // تعيين الـ ref للوصول إلى providers
+      notificationService.setRef(ref as Ref);
+      
+      // تهيئة خدمة الإشعارات
+      final notificationInitialized = await notificationService.initialize();
+      
+      if (notificationInitialized) {
+        ErrorHandler.logSuccess('Notification service initialized successfully');
+      } else {
+        ErrorHandler.logWarning('Notification service failed to initialize - app will continue without notifications');
+      }
+      
+      setState(() {
+        _notificationInitialized = true;
+      });
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, context: 'Notification service initialization in AppInitializer failed');
+      // Continue with app even if notifications fail
+      setState(() {
+        _notificationInitialized = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // انتظر حتى تتم تهيئة الإشعارات قبل عرض التطبيق
+    if (!_notificationInitialized) {
+      return const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('جاري تهيئة التطبيق...'),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return const ErrorBoundary(
+      child: MyApp(),
     );
   }
 }

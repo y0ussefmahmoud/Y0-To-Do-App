@@ -79,6 +79,11 @@ class TasksNotifier extends StateNotifier<List<Task>> {
       if (settings.notificationsEnabled) {
         final notificationService = _ref.read(notificationServiceProvider);
         await notificationService.scheduleTaskNotification(task, settings.notificationMinutesBefore);
+        
+        // جدولة إشعار دقيق الوقت إذا كان مفعلاً
+        if (settings.exactTimeNotificationsEnabled) {
+          await notificationService.scheduleExactTimeNotification(task);
+        }
       }
       
       await refresh();
@@ -113,6 +118,11 @@ class TasksNotifier extends StateNotifier<List<Task>> {
       final settings = _ref.read(settingsProvider);
       if (settings.notificationsEnabled && !task.isDone) {
         await notificationService.scheduleTaskNotification(task, settings.notificationMinutesBefore);
+        
+        // جدولة إشعار دقيق الوقت إذا كان مفعلاً
+        if (settings.exactTimeNotificationsEnabled) {
+          await notificationService.scheduleExactTimeNotification(task);
+        }
       }
       
       await refresh();
@@ -173,6 +183,11 @@ class TasksNotifier extends StateNotifier<List<Task>> {
         final settings = _ref.read(settingsProvider);
         if (settings.notificationsEnabled) {
           await notificationService.scheduleTaskNotification(task, settings.notificationMinutesBefore);
+          
+          // جدولة إشعار دقيق الوقت إذا كان مفعلاً
+          if (settings.exactTimeNotificationsEnabled) {
+            await notificationService.scheduleExactTimeNotification(task);
+          }
         }
       } else {
         // إذا كانت المهمة غير مكتملة وستصبح مكتملة، إلغاء الإشعار
@@ -299,6 +314,11 @@ class TasksNotifier extends StateNotifier<List<Task>> {
       for (final task in incompleteTasks) {
         if (task.dueDate != null) {
           await notificationService.scheduleTaskNotification(task, settings.notificationMinutesBefore);
+          
+          // جدولة إشعار دقيق الوقت إذا كان مفعلاً
+          if (settings.exactTimeNotificationsEnabled) {
+            await notificationService.scheduleExactTimeNotification(task);
+          }
         }
       }
       
@@ -370,6 +390,13 @@ final taskFilterProvider = StateProvider<TaskFilter>((ref) {
 final filteredTasksProvider = Provider<List<Task>>((ref) {
   final tasks = ref.watch(tasksProvider);
   final filter = ref.watch(taskFilterProvider);
+  
+  // Reset pagination when filter changes
+  ref.listen(taskFilterProvider, (previous, next) {
+    if (previous != next) {
+      ref.read(currentPageProvider.notifier).state = 1;
+    }
+  });
   
   if (!filter.isActive) {
     return tasks;

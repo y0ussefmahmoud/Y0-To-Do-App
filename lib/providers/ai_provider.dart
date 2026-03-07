@@ -27,7 +27,7 @@ final speechServiceProvider = Provider<SpeechService>((ref) {
 final notificationServiceProvider = Provider<NotificationService>((ref) {
   final service = NotificationService();
   // تعيين الـ Ref للوصول إلى providers من داخل الخدمة
-  NotificationService.setRef(ref);
+  service.setRef(ref);
   return service;
 });
 

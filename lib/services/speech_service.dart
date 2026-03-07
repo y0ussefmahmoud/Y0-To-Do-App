@@ -67,33 +67,40 @@ class SpeechService {
       // طلب الأذونات
       final micPermission = await Permission.microphone.request();
       if (!micPermission.isGranted) {
+        debugPrint('❌ لم يتم منح إذن الميكروفون - الصوت لن يعمل');
         return false;
       }
+      debugPrint('✅ تم منح إذن الميكروفون بنجاح');
 
       // تهيئة المحركات
       _speechToText = SpeechToText();
       _flutterTts = FlutterTts();
 
-      // تهيئة Speech to Text
+      // تهيئة Speech to Text مع معالجة أفضل
+      debugPrint('🔄 جاري تهيئة Speech to Text...');
       final sttAvailable = await _speechToText!.initialize(
-        onError: (error) => debugPrint('STT Error: $error'),
-        onStatus: (status) => debugPrint('STT Status: $status'),
+        onError: (error) => debugPrint('❌ STT Error: $error'),
+        onStatus: (status) => debugPrint('📊 STT Status: $status'),
       );
 
-      // تهيئة Text to Speech
-      await _flutterTts!.setLanguage('ar-SA'); // Arabic
-      await _flutterTts!.setSpeechRate(0.5);
-      await _flutterTts!.setVolume(1.0);
-      await _flutterTts!.setPitch(1.0);
+      if (!sttAvailable) {
+        debugPrint('❌ فشل في تهيئة Speech to Text');
+        return false;
+      }
+      debugPrint('✅ تم تهيئة Speech to Text بنجاح');
 
-      _isInitialized = sttAvailable;
-      
+      // تهيئة Text to Speech مع معالجة أفضل للغة
+      await _initializeTTS();
+
+      _isInitialized = true;
+
       // بدء idle timer
       _resetIdleTimer();
-      
-      return _isInitialized;
+
+      debugPrint('🎉 تم تهيئة خدمة الصوت بنجاح');
+      return true;
     } catch (e) {
-      debugPrint('Speech Service initialization error: $e');
+      debugPrint('❌ خطأ في تهيئة خدمة الصوت: $e');
       return false;
     }
   }
@@ -106,24 +113,56 @@ class SpeechService {
     _idleTimer = Timer(_idleTimeout, _releaseResources);
   }
 
-  /// تحرير الموارد غير المستخدمة
-  /// 
-  /// يوقف المحركات ويفرغ الذاكرة
-  void _releaseResources() {
+  /// تهيئة Text to Speech مع معالجة أفضل للغة
+  Future<void> _initializeTTS() async {
+    if (_flutterTts == null) return;
+
     try {
-      _speechToText?.cancel();
-      _speechToText = null;
-      
-      _flutterTts?.stop();
-      _flutterTts = null;
-      
-      _isInitialized = false;
-      _isListening = false;
-      
-      debugPrint('Speech resources released due to inactivity');
+      // محاولة اللغة العربية أولاً
+      final arabicLanguages = ['ar-SA', 'ar', 'ar-SA-u-nu-latn', 'ar-SA-u-nu-arab'];
+      String? selectedLanguage;
+
+      for (final lang in arabicLanguages) {
+        final available = await _flutterTts!.isLanguageAvailable(lang);
+        if (available) {
+          selectedLanguage = lang;
+          break;
+        }
+      }
+
+      // إذا لم تتوفر اللغة العربية، استخدم الإنجليزية كبديل
+      if (selectedLanguage == null) {
+        final englishAvailable = await _flutterTts!.isLanguageAvailable('en-US');
+        selectedLanguage = englishAvailable ? 'en-US' : null;
+      }
+
+      // تعيين اللغة المحددة
+      if (selectedLanguage != null) {
+        await _flutterTts!.setLanguage(selectedLanguage);
+        debugPrint('TTS Language set to: $selectedLanguage');
+      }
+
+      // تعيين إعدادات الصوت
+      await _flutterTts!.setSpeechRate(0.5);
+      await _flutterTts!.setVolume(1.0);
+      await _flutterTts!.setPitch(1.0);
+
     } catch (e) {
-      debugPrint('Error releasing speech resources: $e');
+      debugPrint('Error initializing TTS: $e');
     }
+  }
+
+  /// تحرير الموارد
+  /// 
+  /// يحرر محركات STT و TTS
+  /// 
+  /// يتم استدعاء هذه الدالة تلقائياً بعد 5 دقائق من عدم الاستخدام
+  void _releaseResources() {
+    _speechToText?.cancel();
+    _flutterTts = null;
+    _isInitialized = false;
+    _isListening = false;
+    debugPrint('Speech resources released due to inactivity');
   }
 
   /// بدء الاستماع للإدخال الصوتي
@@ -166,13 +205,7 @@ class SpeechService {
         },
         listenFor: const Duration(seconds: 30),
         pauseFor: const Duration(seconds: 3),
-        // ignore: deprecated_member_use
-        partialResults: false,
         localeId: 'ar-SA', // Arabic
-        // ignore: deprecated_member_use
-        cancelOnError: true,
-        // ignore: deprecated_member_use
-        listenMode: ListenMode.confirmation,
       );
       _isListening = true;
     } catch (e) {

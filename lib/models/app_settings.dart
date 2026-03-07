@@ -27,6 +27,9 @@ class AppSettings {
   
   @HiveField(7)
   final int notificationMinutesBefore; // minutes before due date
+  
+  @HiveField(8)
+  final bool exactTimeNotificationsEnabled; // enable notifications exactly at due time
 
   const AppSettings({
     this.themeMode = 'system',
@@ -37,6 +40,7 @@ class AppSettings {
     this.speechVolume = 0.8,
     this.speechPitch = 1.0,
     this.notificationMinutesBefore = 60,
+    this.exactTimeNotificationsEnabled = false,
   });
 
   AppSettings copyWith({
@@ -48,6 +52,7 @@ class AppSettings {
     double? speechVolume,
     double? speechPitch,
     int? notificationMinutesBefore,
+    bool? exactTimeNotificationsEnabled,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -58,6 +63,7 @@ class AppSettings {
       speechVolume: speechVolume ?? this.speechVolume,
       speechPitch: speechPitch ?? this.speechPitch,
       notificationMinutesBefore: notificationMinutesBefore ?? this.notificationMinutesBefore,
+      exactTimeNotificationsEnabled: exactTimeNotificationsEnabled ?? this.exactTimeNotificationsEnabled,
     );
   }
 
@@ -71,6 +77,7 @@ class AppSettings {
       'speechVolume': speechVolume,
       'speechPitch': speechPitch,
       'notificationMinutesBefore': notificationMinutesBefore,
+      'exactTimeNotificationsEnabled': exactTimeNotificationsEnabled,
     };
   }
 
@@ -84,6 +91,7 @@ class AppSettings {
       speechVolume: map['speechVolume']?.toDouble() ?? 0.8,
       speechPitch: map['speechPitch']?.toDouble() ?? 1.0,
       notificationMinutesBefore: map['notificationMinutesBefore'] ?? 60,
+      exactTimeNotificationsEnabled: map['exactTimeNotificationsEnabled'] ?? false,
     );
   }
 
@@ -98,7 +106,8 @@ class AppSettings {
         other.speechRate == speechRate &&
         other.speechVolume == speechVolume &&
         other.speechPitch == speechPitch &&
-        other.notificationMinutesBefore == notificationMinutesBefore;
+        other.notificationMinutesBefore == notificationMinutesBefore &&
+        other.exactTimeNotificationsEnabled == exactTimeNotificationsEnabled;
   }
 
   @override
@@ -110,6 +119,7 @@ class AppSettings {
         speechRate.hashCode ^
         speechVolume.hashCode ^
         speechPitch.hashCode ^
-        notificationMinutesBefore.hashCode;
+        notificationMinutesBefore.hashCode ^
+        exactTimeNotificationsEnabled.hashCode;
   }
 }

@@ -86,6 +86,11 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _saveSettings();
   }
 
+  Future<void> toggleExactTimeNotifications(bool enabled) async {
+    state = state.copyWith(exactTimeNotificationsEnabled: enabled);
+    await _saveSettings();
+  }
+
   Future<void> resetToDefaults() async {
     state = const AppSettings();
     await _saveSettings();

@@ -1,7 +1,10 @@
+// ignore_for_file: use_build_context_synchronously, duplicate_ignore
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/settings_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/ai_provider.dart';
@@ -132,6 +135,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showNotificationTimeSelector(context),
                       ),
+                      SwitchListTile(
+                        secondary: Icon(
+                          settings.exactTimeNotificationsEnabled 
+                              ? Icons.access_time 
+                              : Icons.access_time_outlined,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: const Text('إشعارات دقيقة الوقت'),
+                        subtitle: const Text('إشعار إضافي يظهر في الوقت المحدد تماماً'),
+                        value: settings.exactTimeNotificationsEnabled,
+                        onChanged: (value) async {
+                          HapticFeedback.lightImpact();
+                          
+                          // تحديث الإعدادات
+                          await ref.read(settingsProvider.notifier).toggleExactTimeNotifications(value);
+                          
+                          // التعامل مع الإشعارات
+                          if (value) {
+                            // تفعيل الإشعارات الدقيقة: إعادة جدولة جميع الإشعارات
+                            await ref.read(tasksProvider.notifier).rescheduleAllNotifications();
+                            // ignore: use_build_context_synchronously
+                            _showSnackBar(context, 'تم تفعيل الإشعارات الدقيقة');
+                          } else {
+                            // تعطيل الإشعارات الدقيقة: إلغاء الإشعارات الدقيقة فقط
+                            await ref.read(tasksProvider.notifier).rescheduleAllNotifications();
+                            // ignore: use_build_context_synchronously
+                            _showSnackBar(context, 'تم تعطيل الإشعارات الدقيقة');
+                          }
+                        },
+                      ),
                       ListTile(
                         leading: Icon(
                           Icons.notifications_active_outlined,
@@ -191,7 +224,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           color: theme.colorScheme.primary,
                         ),
                         title: const Text('معلومات التطبيق'),
-                        subtitle: const Text('Y0 To-Do App v1.0.0'),
+                        subtitle: const Text('Y0 To-Do App v2.2.3'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showAppInfo(context),
                       ),
@@ -315,11 +348,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showAppInfo(BuildContext context) {
+  void _showAppInfo(BuildContext context) async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    
     showAboutDialog(
       context: context,
       applicationName: 'Y0 To-Do App',
-      applicationVersion: '1.0.0',
+      applicationVersion: packageInfo.version,
       applicationIcon: const Icon(Icons.task_alt, size: 48),
       children: [
         const Text('تطبيق مهام احترافي مع واجهة عربية كاملة ومميزات متقدمة.'),

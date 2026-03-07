@@ -133,7 +133,7 @@ class HapticService {
     
     try {
       bool? hasVibrator = await Vibration.hasVibrator();
-      return hasVibrator ?? true; // Assume available if we can't check
+      return hasVibrator; // Assume available if we can't check
     } catch (e) {
       return true; // Assume available on mobile platforms
     }

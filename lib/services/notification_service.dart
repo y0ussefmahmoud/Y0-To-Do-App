@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,39 +60,51 @@ class NotificationService {
   /// }
   /// ```
   Future<bool> initialize() async {
-    if (_isInitialized) return true;
+    if (_isInitialized) {
+      return true;
+    }
+
+    debugPrint('🚀 بدء تهيئة خدمة الإشعارات...');
 
     try {
       // طلب أذونات الإشعارات مع معالجة أفضل
+      debugPrint('🔐 طلب أذونات الإشعارات...');
       final notificationPermission = await Permission.notification.request();
       if (notificationPermission.isDenied) {
-        debugPrint('تم رفض إذن الإشعارات');
-        // لا نرجع false فوراً، نحاول الاستمرار بدون إشعارات
-        // return false;
+        debugPrint('⚠️ تم رفض إذن الإشعارات - لن تعمل الإشعارات');
+        return false;
       } else if (notificationPermission.isPermanentlyDenied) {
-        debugPrint('تم رفض إذن الإشعارات بشكل دائم');
-        // return false;
+        debugPrint('🚫 تم رفض إذن الإشعارات بشكل دائم - اذهب للإعدادات لتفعيله');
+        return false;
+      } else if (notificationPermission.isGranted) {
+        debugPrint('✅ تم منح إذن الإشعارات بنجاح');
       }
 
       // تهيئة timezone مع معالجة خطأ
+      debugPrint('🌍 تهيئة timezone...');
       try {
         tz.initializeTimeZones();
+        debugPrint('✅ تم تهيئة timezone بنجاح');
       } catch (e) {
-        debugPrint('خطأ في تهيئة timezone: $e');
-        // نستمر بدون timezone
+        debugPrint('❌ خطأ في تهيئة timezone: $e');
+        return false;
       }
 
       // إعدادات Android مع معالجة خطأ
+      debugPrint('🤖 تهيئة إعدادات Android...');
       AndroidInitializationSettings? androidInitializationSettings;
       try {
         androidInitializationSettings = const AndroidInitializationSettings(
-          '@mipmap/ic_launcher',
+          'ic_launcher',
         );
+        debugPrint('✅ تم إعداد Android settings بنجاح');
       } catch (e) {
-        debugPrint('خطأ في إعدادات Android: $e');
+        debugPrint('❌ خطأ في إعدادات Android: $e');
+        return false;
       }
 
       // إعدادات iOS مع معالجة خطأ
+      debugPrint('🍎 تهيئة إعدادات iOS...');
       DarwinInitializationSettings? darwinInitializationSettings;
       try {
         darwinInitializationSettings = const DarwinInitializationSettings(
@@ -98,29 +112,35 @@ class NotificationService {
           requestBadgePermission: true,
           requestSoundPermission: true,
         );
+        debugPrint('✅ تم إعداد iOS settings بنجاح');
       } catch (e) {
-        debugPrint('خطأ في إعدادات iOS: $e');
+        debugPrint('❌ خطأ في إعدادات iOS: $e');
+        // لا نرجع false لأن iOS قد لا يكون متاحاً
       }
 
-      // التحقق من وجود الإعدادات
-      if (androidInitializationSettings == null || darwinInitializationSettings == null) {
-        debugPrint('فشل في تهيئة إعدادات المنصة');
+      // التحقق من وجود الإعدادات الأساسية
+      if (androidInitializationSettings == null) {
+        debugPrint('❌ فشل في تهيئة إعدادات Android الأساسية');
         return false;
       }
 
       // إعدادات التهيئة
+      debugPrint('🔧 تطبيق إعدادات التهيئة...');
       final initializationSettings = InitializationSettings(
         android: androidInitializationSettings,
         iOS: darwinInitializationSettings,
       );
 
       // تهيئة الـ plugin مع معالج الإشعارات
+      debugPrint('📱 تهيئة Flutter Local Notifications Plugin...');
       await _flutterLocalNotificationsPlugin.initialize(
         initializationSettings,
         onDidReceiveNotificationResponse: _onNotificationTapped,
       );
+      debugPrint('✅ تم تهيئة الـ plugin بنجاح');
 
       // إنشاء notification channel لـ Android مع معالجة خطأ
+      debugPrint('📢 إنشاء notification channel...');
       try {
         const androidChannel = AndroidNotificationChannel(
           'tasks_channel',
@@ -135,20 +155,50 @@ class NotificationService {
             .resolvePlatformSpecificImplementation<
                 AndroidFlutterLocalNotificationsPlugin>()
             ?.createNotificationChannel(androidChannel);
+        debugPrint('✅ تم إنشاء notification channel العادي بنجاح');
       } catch (e) {
-        debugPrint('خطأ في إنشاء notification channel: $e');
-        // نستمر بدون channel
+        debugPrint('❌ خطأ في إنشاء notification channel العادي: $e');
+        // نستمر بدون channel لكن قد لا تعمل الإشعارات
+      }
+
+      // إنشاء notification channel للإشعارات الدقيقة
+      try {
+        const exactChannel = AndroidNotificationChannel(
+          'exact_tasks_channel',
+          'إشعارات المهام الدقيقة',
+          description: 'إشعارات تظهر في الوقت المحدد تماماً للمهام',
+          importance: Importance.max,
+          enableVibration: true,
+          playSound: true,
+        );
+
+        await _flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.createNotificationChannel(exactChannel);
+        debugPrint('✅ تم إنشاء notification channel الدقيق بنجاح');
+      } catch (e) {
+        debugPrint('❌ خطأ في إنشاء notification channel الدقيق: $e');
+        // نستمر بدون channel لكن قد لا تعمل الإشعارات الدقيقة
       }
 
       _isInitialized = true;
+      debugPrint('🎉 تم تهيئة خدمة الإشعارات بنجاح بالكامل');
+      
+      // اختبار سريع للإشعارات
+      debugPrint('🧪 إجراء اختبار سريع للإشعارات...');
+      final testNotifications = await getPendingNotifications();
+      debugPrint('📊 عدد الإشعارات المعلقة بعد التهيئة: ${testNotifications.length}');
+      
       return true;
     } catch (e) {
-      debugPrint('خطأ في تهيئة الإشعارات: $e');
+      debugPrint('❌ خطأ عام في تهيئة الإشعارات: $e');
+      debugPrint('🔍 تفاصيل الخطأ: ${e.runtimeType}');
       return false;
     }
   }
 
-  /// جدولة إشعار لمهمة
+  /// جدولة إشعار للمهمة
   /// 
   /// [task] المهمة المراد جدولة إشعار لها
   /// [notificationMinutesBefore] عدد الدقائق قبل موعد المهمة لإرسال الإشعار
@@ -167,11 +217,12 @@ class NotificationService {
   /// ```
   Future<void> scheduleTaskNotification(Task task, int notificationMinutesBefore) async {
     if (!_isInitialized) {
-      debugPrint('خدمة الإشعارات غير مهيأة');
+      debugPrint('❌ خدمة الإشعارات غير مهيأة');
       return;
     }
 
     if (task.dueDate == null || task.isDone) {
+      debugPrint('ℹ️ المهمة لا تحتوي على تاريخ استحقاق أو مكتملة: ${task.title}');
       return;
     }
 
@@ -179,9 +230,14 @@ class NotificationService {
       // حساب وقت الإشعار (قبل موعد المهمة بالوقت المحدد)
       final notificationTime = task.dueDate!.subtract(Duration(minutes: notificationMinutesBefore));
 
+      debugPrint('📅 جدولة إشعار للمهمة: ${task.title}');
+      debugPrint('⏰ وقت الإشعار: $notificationTime');
+      debugPrint('📆 وقت المهمة: ${task.dueDate}');
+      debugPrint('⏳ دقائق قبل: $notificationMinutesBefore');
+
       // التحقق من أن الوقت في المستقبل
       if (notificationTime.isBefore(DateTime.now())) {
-        debugPrint('وقت الإشعار في الماضي، سيتم تجاهله');
+        debugPrint('⚠️ وقت الإشعار في الماضي، سيتم تجاهله');
         return;
       }
 
@@ -199,7 +255,7 @@ class NotificationService {
             priority: Priority.high,
             enableVibration: true,
             playSound: true,
-            icon: '@mipmap/ic_launcher',
+            icon: 'ic_launcher',
             actions: [
               AndroidNotificationAction(
                 'complete',
@@ -226,9 +282,97 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
 
-      debugPrint('تم جدولة إشعار للمهمة: ${task.title}');
+      debugPrint('✅ تم جدولة إشعار للمهمة: ${task.title}');
     } catch (e) {
-      debugPrint('خطأ في جدولة الإشعارات: $e');
+      debugPrint('❌ خطأ في جدولة الإشعارات: $e');
+    }
+  }
+
+  /// جدولة إشعار دقيق الوقت للمهمة
+  /// 
+  /// [task] المهمة المراد جدولة إشعار لها
+  /// 
+  /// يظهر الإشعار في الوقت المحدد تماماً للمهمة (لا يسبقها)
+  /// مناسب للمهام ذات الأهمية العالية
+  /// 
+  /// مثال:
+  /// ```dart
+  /// final task = Task(
+  ///   id: '123',
+  ///   title: 'اجتماع مهم',
+  ///   dueDate: DateTime.now().add(Duration(hours: 2)),
+  /// );
+  /// await service.scheduleExactTimeNotification(task);
+  /// ```
+  Future<void> scheduleExactTimeNotification(Task task) async {
+    if (!_isInitialized) {
+      debugPrint('❌ خدمة الإشعارات غير مهيأة');
+      return;
+    }
+
+    if (task.dueDate == null || task.isDone) {
+      debugPrint('ℹ️ المهمة لا تحتوي على تاريخ استحقاق أو مكتملة: ${task.title}');
+      return;
+    }
+
+    try {
+      // استخدام الوقت المحدد تماماً للمهمة
+      final notificationTime = task.dueDate!;
+
+      debugPrint('🎯 جدولة إشعار دقيق الوقت للمهمة: ${task.title}');
+      debugPrint('⏰ وقت الإشعار الدقيق: $notificationTime');
+      debugPrint('📆 وقت المهمة: ${task.dueDate}');
+
+      // التحقق من أن الوقت في المستقبل
+      if (notificationTime.isBefore(DateTime.now())) {
+        debugPrint('⚠️ وقت المهمة في الماضي، سيتم تجاهله');
+        return;
+      }
+
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        task.id.hashCode + 2000, // معرف مختلف للإشعار الدقيق
+        'مهمة مستحقة الآن',
+        task.title,
+        tz.TZDateTime.from(notificationTime, tz.local),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'exact_tasks_channel',
+            'إشعارات المهام الدقيقة',
+            channelDescription: 'إشعارات تظهر في الوقت المحدد تماماً للمهام',
+            importance: Importance.max,
+            priority: Priority.max,
+            enableVibration: true,
+            playSound: true,
+            icon: 'ic_launcher',
+            actions: [
+              AndroidNotificationAction(
+                'complete',
+                'إكمال',
+                titleColor: Color(0xFF06D6A0),
+              ),
+              AndroidNotificationAction(
+                'snooze',
+                'تأجيل',
+                titleColor: Color(0xFF6366F1),
+              ),
+            ],
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+            categoryIdentifier: 'exact_tasks_category',
+          ),
+        ),
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: task.id,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+
+      debugPrint('✅ تم جدولة إشعار دقيق الوقت للمهمة: ${task.title}');
+    } catch (e) {
+      debugPrint('❌ خطأ في جدولة الإشعار الدقيق: $e');
     }
   }
 
@@ -280,11 +424,21 @@ class NotificationService {
   /// await service.showInstantNotification('اختبار', 'هذا إشعار تجريبي');
   /// ```
   Future<void> showInstantNotification(String title, String body) async {
-    if (!_isInitialized) return;
+    debugPrint('🔔 محاولة إرسال إشعار فوري: $title - $body');
+    debugPrint('📱 هل الخدمة مهيأة؟ $_isInitialized');
+    
+    if (!_isInitialized) {
+      debugPrint('❌ خدمة الإشعارات غير مهيأة، لا يمكن إرسال الإشعار');
+      return;
+    }
 
     try {
+      debugPrint('📤 جاري إرسال الإشعار...');
+      final notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+      debugPrint('🆔 معرف الإشعار: $notificationId');
+      
       await _flutterLocalNotificationsPlugin.show(
-        DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        notificationId,
         title,
         body,
         const NotificationDetails(
@@ -296,7 +450,7 @@ class NotificationService {
             priority: Priority.high,
             enableVibration: true,
             playSound: true,
-            icon: '@mipmap/ic_launcher',
+            icon: 'ic_launcher',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -305,8 +459,17 @@ class NotificationService {
           ),
         ),
       );
+      
+      debugPrint('✅ تم إرسال الإشعار الفوري بنجاح');
+      
+      // التحقق من الإشعارات المعلقة بعد الإرسال
+      await Future.delayed(const Duration(seconds: 1));
+      final pendingNotifications = await getPendingNotifications();
+      debugPrint('📊 عدد الإشعارات المعلقة الآن: ${pendingNotifications.length}');
+      
     } catch (e) {
-      debugPrint('خطأ في عرض الإشعار الفوري: $e');
+      debugPrint('❌ خطأ في عرض الإشعار الفوري: $e');
+      debugPrint('🔍 تفاصيل الخطأ: ${e.runtimeType}');
     }
   }
 
@@ -397,7 +560,6 @@ class NotificationService {
       if (task != null) {
         // التحقق من أن المهمة غير مكتملة بالفعل
         if (task.isDone) {
-          debugPrint('المهمة مكتملة بالفعل: $taskId');
           debugPrint('المهمة مكتملة بالفعل: $taskId');
           return;
         }
@@ -552,7 +714,7 @@ class NotificationService {
             priority: Priority.high,
             enableVibration: true,
             playSound: true,
-            icon: '@mipmap/ic_launcher',
+            icon: 'ic_launcher',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -575,7 +737,7 @@ class NotificationService {
   /// تعيين مفتاح Navigator للوصول إلى context
   /// 
   /// يجب استدعاؤها في main.dart قبل تشغيل التطبيق
-  static void setNavigatorKey(GlobalKey<NavigatorState> key) {
+  void setNavigatorKey(GlobalKey<NavigatorState> key) {
     navigatorKey = key;
   }
   
@@ -592,7 +754,7 @@ class NotificationService {
   /// 5. التنقل إلى شاشة التفاصيل إذا وجدت المهمة
   /// 
   /// ملاحظة: يجب استدعاؤها بعد تهيئة Hive و navigatorKey
-  static Future<void> checkPendingNavigation() async {
+  Future<void> checkPendingNavigation() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final pendingTaskId = prefs.getString('pending_task_navigation');
@@ -650,7 +812,7 @@ class NotificationService {
   /// تعيين Reference للوصول إلى providers
   /// 
   /// يجب استدعاؤها بعد تهيئة ProviderScope
-  static void setRef(Ref providerRef) {
+  void setRef(Ref providerRef) {
     ref = providerRef;
   }
 }

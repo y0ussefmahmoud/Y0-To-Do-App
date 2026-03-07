@@ -25,13 +25,14 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       speechVolume: fields[5] as double,
       speechPitch: fields[6] as double,
       notificationMinutesBefore: fields[7] as int,
+      exactTimeNotificationsEnabled: fields[8] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, AppSettings obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.themeMode)
       ..writeByte(1)
@@ -47,7 +48,9 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       ..writeByte(6)
       ..write(obj.speechPitch)
       ..writeByte(7)
-      ..write(obj.notificationMinutesBefore);
+      ..write(obj.notificationMinutesBefore)
+      ..writeByte(8)
+      ..write(obj.exactTimeNotificationsEnabled);
   }
 
   @override

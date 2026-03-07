@@ -48,17 +48,26 @@ class HomeScreen extends ConsumerWidget {
         child: NotificationListener<ScrollNotification>(
           onNotification: (scrollNotification) {
             // Load next page when user reaches 80% of the list
-            if (scrollNotification is ScrollEndNotification &&
-                scrollNotification.metrics.extentAfter < 200 &&
+            if (scrollNotification is ScrollUpdateNotification &&
+                scrollNotification.metrics.extentAfter < 300 &&
                 !isPaginationLoading &&
                 hasMorePages &&
                 searchState.query.isEmpty) {
-              ref.read(tasksProvider.notifier).loadNextPage();
+              // Debounce the loading to prevent multiple calls
+              Future.delayed(const Duration(milliseconds: 100), () {
+                if (!isPaginationLoading && hasMorePages) {
+                  ref.read(tasksProvider.notifier).loadNextPage();
+                }
+              });
             }
             return false;
           },
           child: CustomScrollView(
-          slivers: [
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            cacheExtent: 500, // Improve performance by caching more items
+            slivers: [
             // Modern Header
             SliverAppBar(
               expandedHeight: isCompactHeight ? 240 : 280,
@@ -180,14 +189,14 @@ class HomeScreen extends ConsumerWidget {
                           sliver: SliverList(
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
-                                // If we're at the end and there are more pages, show loading indicator
-                                if (index == tasks.length && hasMorePages && searchState.query.isEmpty) {
-                                  return _buildLoadingIndicator();
-                                }
-
-                                // If we're at the end and no more pages, show end message
-                                if (index == tasks.length && !hasMorePages && searchState.query.isEmpty) {
-                                  return _buildEndOfListMessage();
+                                // Handle loading and end states
+                                if (index >= tasks.length) {
+                                  if (hasMorePages && searchState.query.isEmpty) {
+                                    return _buildLoadingIndicator();
+                                  } else if (!hasMorePages && searchState.query.isEmpty) {
+                                    return _buildEndOfListMessage();
+                                  }
+                                  return const SizedBox.shrink(); // Empty widget for search mode
                                 }
 
                                 final task = tasks[index];
@@ -1692,32 +1701,30 @@ class HomeScreen extends ConsumerWidget {
 
   /// مؤشر التحميل ل Pagination
   Widget _buildLoadingIndicator() {
-    return SliverToBoxAdapter(
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        child: Center(
-          child: Column(
-            children: [
-              const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Color(0xFF667EEA),
-                  ),
+    return Container(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Column(
+          children: [
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Color(0xFF667EEA),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'جاري تحميل المزيد...',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'جاري تحميل المزيد...',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1725,28 +1732,26 @@ class HomeScreen extends ConsumerWidget {
 
   /// رسالة نهاية القائمة
   Widget _buildEndOfListMessage() {
-    return SliverToBoxAdapter(
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(
-                Icons.check_circle_outline,
-                size: 32,
-                color: Colors.grey[400],
+    return Container(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.check_circle_outline,
+              size: 32,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'لا توجد مهام أخرى',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'لا توجد مهام أخرى',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1760,52 +1765,45 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 24),
-                  Text(
-                    'لا توجد مهام حاليًا',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                    textAlign: TextAlign.center,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 24),
+            Text(
+              'لا توجد مهام حاليًا',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'ابدأ بإضافة مهمة جديدة لتنظيم يومك.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                        ),
-                    textAlign: TextAlign.center,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'ابدأ بإضافة مهمة جديدة لتنظيم يومك.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: onAddTask,
-                    icon: const Icon(Icons.add),
-                    label: const Text('إضافة مهمة جديدة'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: onAddTask,
+              icon: const Icon(Icons.add),
+              label: const Text('إضافة مهمة جديدة'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }
