@@ -243,7 +243,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           color: theme.colorScheme.primary,
                         ),
                         title: const Text('معلومات التطبيق'),
-                        subtitle: const Text('Y0 To-Do App v3.2.2'),
+                        subtitle: const Text('Y0 To-Do App v3.2.3'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showAppInfo(context),
                       ),

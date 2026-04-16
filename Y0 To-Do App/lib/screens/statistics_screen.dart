@@ -109,7 +109,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       children: [
         // Version Badge
         Text(
-          'V3.2.2 • نظرة عامة',
+          'V3.2.3 • نظرة عامة',
           style: context.textTheme.labelMedium?.copyWith(
             color: isDark 
                 ? const Color(0xFF66bb6a)
@@ -469,7 +469,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           children: [
             TextButton(
               onPressed: () {
-                // TODO: Navigate to all achievements
+                // Achievements navigation - optional feature
               },
               child: Row(
                 textDirection: TextDirection.rtl,
