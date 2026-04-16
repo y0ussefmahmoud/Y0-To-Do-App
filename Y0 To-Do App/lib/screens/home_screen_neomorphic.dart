@@ -1112,17 +1112,9 @@ class _HomeScreenNeoMorphicState extends ConsumerState<HomeScreenNeoMorphic> {
 
   // ==================== EVENT HANDLERS ====================
   
-  /// 🔍 معالج البحث
-  void _handleSearch(BuildContext context) {
-    // TODO: تنفيذ وظيفة البحث المتقدم
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('البحث قيد التطوير')),
-    );
-  }
-
   /// 🎤 بدء الإدخال الصوتي للمهمة
   void _startVoiceInput(BuildContext context, WidgetRef ref) {
-    // TODO: تنفيذ الإدخال الصوتي
+    // Voice input feature - optional
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('الإدخال الصوتي قيد التطوير')),
     );

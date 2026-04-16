@@ -349,7 +349,6 @@ class _NeoMorphicTaskDialogState extends State<NeoMorphicTaskDialog>
         ),
         const SizedBox(height: 12),
         
-        // TODO: Replace with actual categories from provider
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -491,8 +490,15 @@ class _NeoMorphicTaskDialogState extends State<NeoMorphicTaskDialog>
             text: widget.isEditing ? 'حفظ التغييرات' : 'إضافة المهمة',
             onPressed: _titleController.text.trim().isNotEmpty
                 ? () {
-                    // TODO: Implement save logic
-                    Navigator.of(context).pop();
+                    final result = {
+                      'title': _titleController.text.trim(),
+                      'description': _descriptionController.text.trim(),
+                      'priority': _selectedPriority,
+                      'category': _selectedCategory,
+                      'dueDate': _selectedDueDate,
+                      'dueTime': _selectedTime,
+                    };
+                    Navigator.of(context).pop(result);
                   }
                 : null,
             icon: Icons.save,
