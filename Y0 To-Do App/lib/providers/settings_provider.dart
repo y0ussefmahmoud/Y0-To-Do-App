@@ -98,6 +98,11 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _saveSettings();
   }
 
+  Future<void> updateUserName(String name) async {
+    state = state.copyWith(userName: name);
+    await _saveSettings();
+  }
+
   Future<void> resetToDefaults() async {
     state = const AppSettings();
     await _saveSettings();

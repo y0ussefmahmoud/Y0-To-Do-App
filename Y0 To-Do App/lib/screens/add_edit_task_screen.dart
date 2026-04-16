@@ -165,8 +165,10 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
           widget.task == null ? 'إضافة مهمة جديدة' : 'تعديل المهمة',
@@ -188,10 +190,13 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -271,18 +276,78 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<int>(
-                initialValue: _priority,
-                decoration: const InputDecoration(
-                  labelText: 'الأولوية',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 0, child: Text('منخفضة')),
-                  DropdownMenuItem(value: 1, child: Text('متوسطة')),
-                  DropdownMenuItem(value: 2, child: Text('عالية')),
+              const Text('الأولوية:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _priority = 2),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          gradient: _priority == 2 
+                              ? LinearGradient(
+                                  colors: [Colors.red.shade700, Colors.red.shade500],
+                                )
+                              : null,
+                          color: _priority == 2 ? null : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'عالية',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: _priority == 2 ? Colors.white : Colors.grey.shade700,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _priority = 1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _priority == 1 ? Colors.orange.shade200 : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'متوسطة',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: _priority == 1 ? Colors.orange.shade800 : Colors.grey.shade700,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _priority = 0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _priority == 0 ? const Color(0xFFC8E6C9) : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'منخفضة',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: _priority == 0 ? const Color(0xFF2E7D32) : Colors.grey.shade700,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
-                onChanged: (value) => setState(() => _priority = value!),
               ),
               const SizedBox(height: 16),
               const Text('التصنيف:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -330,7 +395,8 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                   label: Text(widget.task == null ? 'إنشاء المهمة' : 'حفظ التغييرات'),
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

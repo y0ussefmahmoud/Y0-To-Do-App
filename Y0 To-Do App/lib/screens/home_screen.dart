@@ -20,8 +20,6 @@ import '../widgets/error_snackbar.dart';
 import '../widgets/success_snackbar.dart';
 import '../services/haptic_service.dart';
 import 'home_screen_empty_filtered.dart';
-import 'statistics_screen.dart';
-import 'settings_screen.dart';
 import '../services/speech_service.dart';
 import '../services/ai_service.dart';
 
@@ -81,10 +79,7 @@ class HomeScreen extends ConsumerWidget {
                   label: AccessibilityHelper.getButtonLabel('الإحصائيات'),
                   tooltip: 'الإحصائيات',
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const StatisticsScreen()),
-                    );
+                    Navigator.pushNamed(context, '/statistics');
                   },
                 ),
                 AccessibleIconButton(
@@ -92,10 +87,7 @@ class HomeScreen extends ConsumerWidget {
                   label: AccessibilityHelper.getButtonLabel('الإعدادات'),
                   tooltip: 'الإعدادات',
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                    );
+                    Navigator.pushNamed(context, '/settings');
                   },
                 ),
               ],
@@ -155,10 +147,15 @@ class HomeScreen extends ConsumerWidget {
               if (tasks.isNotEmpty) _buildSmartSuggestions(ref),
 
               // Task Filters (only show when not searching)
-              const SliverPadding(
-                padding: EdgeInsets.all(16),
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
                 sliver: SliverToBoxAdapter(
-                  child: TaskFilterChips(),
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      final filter = ref.watch(taskFilterProvider);
+                      return TaskFilterChips(filter: filter);
+                    },
+                  ),
                 ),
               ),
             ],

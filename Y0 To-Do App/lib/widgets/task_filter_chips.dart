@@ -9,7 +9,9 @@ import '../models/task_filter.dart';
 import '../providers/task_provider.dart';
 
 class TaskFilterChips extends ConsumerWidget {
-  const TaskFilterChips({super.key});
+  final TaskFilter filter;
+  
+  const TaskFilterChips({super.key, required this.filter});
 
   void _handleFilterSelection(String value, TaskFilter filter, StateController<TaskFilter> filterNotifier) {
     switch (value) {
@@ -91,7 +93,6 @@ class TaskFilterChips extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filter = ref.watch(taskFilterProvider);
     final filterNotifier = ref.read(taskFilterProvider.notifier);
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
 
@@ -113,7 +114,7 @@ class TaskFilterChips extends ConsumerWidget {
                   size: 20,
                   color: Color(0xFF64748B),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Text(
                   'تصفية المهام',
                   style: TextStyle(
@@ -123,7 +124,7 @@ class TaskFilterChips extends ConsumerWidget {
                   ),
                 ),
                 if (filter.isActive) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -161,7 +162,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(Icons.filter_list, size: 16),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Text('الحالة: الكل'),
                           ],
                         ),
@@ -171,7 +172,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(Icons.schedule, size: 16),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Text('الحالة: معلقة'),
                           ],
                         ),
@@ -181,7 +182,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(Icons.check_circle, size: 16),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Text('الحالة: مكتملة'),
                           ],
                         ),
@@ -192,7 +193,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(Icons.flag, size: 16),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Text('الأولوية: الكل'),
                           ],
                         ),
@@ -202,7 +203,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(Icons.priority_high, size: 16, color: Colors.red),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Text('الأولوية: عالية'),
                           ],
                         ),
@@ -212,7 +213,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(Icons.remove, size: 16, color: Colors.orange),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Text('الأولوية: متوسطة'),
                           ],
                         ),
@@ -222,7 +223,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.green),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Text('الأولوية: منخفضة'),
                           ],
                         ),
@@ -233,7 +234,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(Icons.date_range, size: 16),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Text('التاريخ: الكل'),
                           ],
                         ),
@@ -243,7 +244,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(Icons.today, size: 16),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Text('التاريخ: اليوم'),
                           ],
                         ),
@@ -253,7 +254,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(Icons.view_week, size: 16),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Text('التاريخ: هذا الأسبوع'),
                           ],
                         ),
@@ -264,7 +265,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(Icons.category, size: 16),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             const Text('التصنيف: الكل'),
                           ],
                         ),
@@ -274,7 +275,7 @@ class TaskFilterChips extends ConsumerWidget {
                         child: Row(
                           children: [
                             Icon(category.icon, size: 16, color: category.color),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Text('التصنيف: ${category.displayName}'),
                           ],
                         ),
@@ -286,7 +287,7 @@ class TaskFilterChips extends ConsumerWidget {
                           child: Row(
                             children: [
                               Icon(Icons.refresh, size: 16),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 6),
                               const Text('إعادة تعيين الفلاتر'),
                             ],
                           ),
@@ -308,8 +309,8 @@ class TaskFilterChips extends ConsumerWidget {
                   minWidth: MediaQuery.of(context).size.width - 32,
                 ),
                 child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 6,
+                  runSpacing: 6,
                   alignment: WrapAlignment.start,
                   children: [
                     // الحالة
