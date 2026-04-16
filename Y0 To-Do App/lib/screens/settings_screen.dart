@@ -11,6 +11,7 @@ import '../providers/ai_provider.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/theme_mode_selector.dart';
 import '../widgets/voice_settings_panel.dart';
+import '../widgets/bottom_navigation.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -26,12 +27,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('الإعدادات'),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: theme.colorScheme.onSurface,
-      ),
       body: CustomScrollView(
         slivers: [
           SliverPadding(
@@ -210,6 +205,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 
                 const SizedBox(height: 16),
                 
+                // Profile Section
+                Card(
+                  child: Column(
+                    children: [
+                      const SettingsSection(
+                        title: 'الملف الشخصي',
+                        icon: Icons.person,
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          Icons.person_outline,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: const Text('اسم المستخدم'),
+                        subtitle: Text(settings.userName),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _showNameEditDialog(context),
+                      ),
+                    ],
+                  ),
+                ).animate().slideX(begin: -0.1, duration: 300.ms).fadeIn(),
+                
+                const SizedBox(height: 16),
+                
                 // About Section
                 Card(
                   child: Column(
@@ -224,7 +243,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           color: theme.colorScheme.primary,
                         ),
                         title: const Text('معلومات التطبيق'),
-                        subtitle: const Text('Y0 To-Do App v2.3.3'),
+                        subtitle: const Text('Y0 To-Do App v3.2.2'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showAppInfo(context),
                       ),
@@ -248,7 +267,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ],
       ),
+      
+      // Bottom Navigation
+      bottomNavigationBar: BottomNavigation(
+        currentIndex: 2,
+        onTap: (index) => _handleNavigationTap(context, index),
+      ),
     );
+  }
+
+  void _handleNavigationTap(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        // Home Screen
+        Navigator.pushReplacementNamed(context, '/');
+        break;
+      case 1:
+        // Statistics Screen
+        Navigator.pushReplacementNamed(context, '/statistics');
+        break;
+      case 2:
+        // Settings Screen (we're already here)
+        break;
+    }
   }
 
   IconData _getThemeModeIcon(String themeMode) {
@@ -380,6 +421,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _showSnackBar(context, 'تم إعادة تعيين جميع الإعدادات');
             },
             child: const Text('تأكيد'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNameEditDialog(BuildContext context) {
+    final controller = TextEditingController(text: ref.read(settingsProvider).userName);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تعديل اسم المستخدم'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'الاسم',
+            hintText: 'أدخل اسمك',
+            border: OutlineInputBorder(),
+          ),
+          textDirection: TextDirection.rtl,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                ref.read(settingsProvider.notifier).updateUserName(name);
+                Navigator.pop(context);
+                _showSnackBar(context, 'تم تحديث اسم المستخدم');
+              }
+            },
+            child: const Text('حفظ'),
           ),
         ],
       ),

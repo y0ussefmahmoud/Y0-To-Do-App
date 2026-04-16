@@ -9,11 +9,14 @@ import 'models/task.dart';
 import 'models/task_category.dart';
 import 'models/search_history.dart';
 import 'models/app_settings.dart';
-import 'screens/home_screen.dart';
+import 'screens/home_screen_neomorphic.dart';
+import 'screens/settings_screen.dart';
+import 'screens/statistics_screen.dart';
 import 'providers/settings_provider.dart';
 import 'services/notification_service.dart';
 import 'utils/error_handler.dart';
 import 'widgets/error_boundary.dart';
+import 'theme/y0_design_system.dart';
 
 /// Global navigator key for navigation throughout the app
 /// Used by both MaterialApp and NotificationService
@@ -195,264 +198,22 @@ class MyApp extends ConsumerWidget {
       navigatorKey: appNavigatorKey,
       title: 'Y0 To-Do App',
       debugShowCheckedModeBanner: false, // إزالة شريط DEBUG
-      theme: _buildLightTheme(),
-      darkTheme: _buildDarkTheme(),
+      theme: Y0DesignSystem.lightTheme,
+      darkTheme: Y0DesignSystem.darkTheme,
       themeMode: themeMode,
-      home: const HomeScreen(),
+      home: const HomeScreenNeoMorphic(),
+      routes: {
+        '/statistics': (context) => const StatisticsScreen(),
+        '/settings': (context) => const SettingsScreen(),
+      },
+      onUnknownRoute: (settings) {
+        return MaterialPageRoute(
+          builder: (context) => const HomeScreenNeoMorphic(),
+        );
+      },
     );
   }
 
-  /// بناء الثيم الفاتح
-  /// 
-  /// يحتوي على تخصيص شامل للألوان والأشكال
-  /// يستخدم Material 3 design
-  /// يحسن contrast ratio للـ accessibility
-  /// يستخدم ألوان حديثة ومناسبة للـ UI
-  ThemeData _buildLightTheme() {
-    const primaryColor = Color(0xFF66BB6A); // أزرق أفتح وأحدث
-    const backgroundColor = Color(0xFFF8FAFC); // أبيض نقي
-    
-    return ThemeData(
-      useMaterial3: true,
-      fontFamily: 'NotoSansArabic',
-      fontFamilyFallback: const [
-        'NotoSans',
-        'NotoSansSymbols2',
-      ],
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        brightness: Brightness.light,
-      ),
-      scaffoldBackgroundColor: backgroundColor,
-      
-      // Typography مع تحسين للـ accessibility
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF1E293B),
-          height: 1.2,
-        ),
-        displayMedium: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF1E293B),
-          height: 1.3,
-        ),
-        displaySmall: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF1E293B),
-          height: 1.3,
-        ),
-        headlineLarge: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF1E293B),
-          height: 1.3,
-        ),
-        headlineMedium: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF1E293B),
-          height: 1.3,
-        ),
-        headlineSmall: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF1E293B),
-          height: 1.3,
-        ),
-        titleLarge: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF1E293B),
-          height: 1.4,
-        ),
-        titleMedium: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF1E293B),
-          height: 1.4,
-        ),
-        titleSmall: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF1E293B),
-          height: 1.4,
-        ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          color: Color(0xFF1E293B),
-          height: 1.5,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: Color(0xFF1E293B),
-          height: 1.5,
-        ),
-        bodySmall: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          color: Color(0xFF1E293B),
-          height: 1.5,
-        ),
-        labelLarge: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF1E293B),
-          height: 1.4,
-        ),
-        labelMedium: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF1E293B),
-          height: 1.4,
-        ),
-        labelSmall: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF1E293B),
-          height: 1.4,
-        ),
-      ).apply(fontFamily: 'NotoSansArabic'),
-      
-      // App Bar Theme
-      appBarTheme: const AppBarTheme(
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Color(0xFF1E293B),
-        titleTextStyle: TextStyle(
-          color: Color(0xFF1E293B),
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
-        ),
-        centerTitle: true,
-      ),
-      
-      // Card Theme
-      cardTheme: CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        color: Colors.white,
-        shadowColor: const Color(0xFFE2E8F0).withValues(alpha: 0.5),
-      ),
-      
-      // Floating Action Button Theme
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        elevation: 8,
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-        ),
-      ),
-      
-      // List Tile Theme
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12)),
-        ),
-      ),
-      
-      // Input Decoration Theme
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: const Color(0xFFF1F5F9),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: const Color(0xFF66BB6A)), // نفس لون الـ primary
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: const Color(0xFF66BB6A)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF66BB6A), width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      ),
-      
-      // Elevated Button Theme
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: const Color(0xFF66BB6A), // نفس لون الـ primary
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// بناء الثيم الداكن
-  /// 
-  /// يحتوي على تخصيص متقدم للوضع الليلي
-  /// يستخدم Material 3 design
-  /// يحسن contrast ratio للـ accessibility
-  /// يستخدم ألوان حديثة ومناسبة
-  ThemeData _buildDarkTheme() {
-    const primaryColor = Color(0xFF66BB6A); // أزرق أفتح للـ dark mode
-    const backgroundColor = Color.fromARGB(255, 48, 46, 46); // أسود داكن ناعم
-    
-    return ThemeData(
-      useMaterial3: true,
-      fontFamily: 'NotoSansArabic',
-      fontFamilyFallback: const [
-        'NotoSans',
-        'NotoSansSymbols2',
-      ],
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        brightness: Brightness.dark,
-      ),
-      scaffoldBackgroundColor: backgroundColor,
-      
-      // Typography مع تحسين للـ accessibility
-      textTheme: Typography.material2021().white.apply(
-        fontSizeFactor: 1.0,
-        fontSizeDelta: 0.0,
-        bodyColor: const Color.fromARGB(255, 138, 184, 156),
-        displayColor: const Color.fromARGB(255, 66, 88, 61),
-        fontFamily: 'NotoSansArabic',
-      ),
-      
-      appBarTheme: const AppBarTheme(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        titleTextStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
-        ),
-        centerTitle: true,
-      ),
-      
-      cardTheme: CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        color: const Color(0xFF1E293B), // أزرق داكن للـ contrast
-        shadowColor: Colors.black.withValues(alpha: 0.3),
-      ),
-    );
-  }
 }
 
 /// Widget لتهيئة التطبيق بعد ProviderScope
@@ -492,8 +253,12 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
       // تعيين الـ ref للوصول إلى providers
       notificationService.setRef(ref);
       
-      // تهيئة خدمة الإشعارات
-      final notificationInitialized = await notificationService.initialize();
+      // تهيئة خدمة الإشعارات مع timeout
+      final notificationInitialized = await notificationService.initialize()
+          .timeout(const Duration(seconds: 5), onTimeout: () {
+            ErrorHandler.logWarning('Notification initialization timed out - continuing without notifications');
+            return false;
+          });
       
       if (notificationInitialized) {
         ErrorHandler.logSuccess('Notification service initialized successfully');
