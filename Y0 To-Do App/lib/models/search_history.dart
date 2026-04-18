@@ -41,4 +41,24 @@ class SearchHistory extends HiveObject {
   String toString() {
     return 'SearchHistory(id: $id, query: $query, timestamp: $timestamp, resultCount: $resultCount)';
   }
+
+  /// Convert SearchHistory to JSON for backup
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'query': query,
+      'timestamp': timestamp.toIso8601String(),
+      'resultCount': resultCount,
+    };
+  }
+
+  /// Create SearchHistory from JSON for restore
+  factory SearchHistory.fromJson(Map<String, dynamic> json) {
+    return SearchHistory(
+      id: json['id'] as String,
+      query: json['query'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      resultCount: json['resultCount'] as int,
+    );
+  }
 }

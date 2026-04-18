@@ -106,4 +106,37 @@ class Task {
       category: category ?? this.category,
     );
   }
+
+  /// Convert Task to JSON for backup
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'note': note,
+      'dueDate': dueDate?.toIso8601String(),
+      'priority': priority,
+      'isDone': isDone,
+      'category': category?.name,
+    };
+  }
+
+  /// Create Task from JSON for restore
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      note: json['note'] as String?,
+      dueDate: json['dueDate'] != null 
+          ? DateTime.parse(json['dueDate'] as String)
+          : null,
+      priority: json['priority'] as int,
+      isDone: json['isDone'] as bool,
+      category: json['category'] != null
+          ? TaskCategory.values.firstWhere(
+              (e) => e.name == json['category'] as String,
+              orElse: () => TaskCategory.general,
+            )
+          : TaskCategory.general,
+    );
+  }
 }

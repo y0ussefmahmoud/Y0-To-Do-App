@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/settings_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/ai_provider.dart';
+import '../services/backup_service.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/theme_mode_selector.dart';
 import '../widgets/voice_settings_panel.dart';
@@ -243,7 +244,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           color: theme.colorScheme.primary,
                         ),
                         title: const Text('معلومات التطبيق'),
-                        subtitle: const Text('Y0 To-Do App v3.2.3'),
+                        subtitle: const Text('Y0 To-Do App v3.2.6'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showAppInfo(context),
                       ),
@@ -260,6 +261,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                 ).animate().slideX(begin: -0.1, duration: 300.ms).fadeIn(),
+                
+                const SizedBox(height: 16),
+                
+                // Backup Section
+                Card(
+                  child: Column(
+                    children: [
+                      const SettingsSection(
+                        title: 'النسخ الاحتياطي',
+                        icon: Icons.backup,
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          Icons.cloud_upload,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: const Text('إنشاء نسخة احتياطية'),
+                        subtitle: const Text('تصدير جميع بيانات التطبيق'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _handleBackup(context),
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          Icons.cloud_download,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: const Text('استعادة نسخة احتياطية'),
+                        subtitle: const Text('استيراد بيانات من نسخة احتياطية'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _handleRestore(context),
+                      ),
+                    ],
+                  ),
+                ).animate().slideX(begin: 0.1, duration: 300.ms).fadeIn(),
                 
                 const SizedBox(height: 32),
               ]),
@@ -419,6 +454,57 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ref.read(settingsProvider.notifier).resetToDefaults();
               Navigator.pop(context);
               _showSnackBar(context, 'تم إعادة تعيين جميع الإعدادات');
+            },
+            child: const Text('تأكيد'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleBackup(BuildContext context) async {
+    try {
+      final backupService = BackupService();
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      
+      await backupService.exportAndShareBackup();
+      
+      if (context.mounted) {
+        Navigator.pop(context);
+        _showSnackBar(context, 'تم إنشاء النسخة الاحتياطية بنجاح');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        _showSnackBar(context, 'فشل إنشاء النسخة الاحتياطية: $e');
+      }
+    }
+  }
+
+  void _handleRestore(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('استعادة نسخة احتياطية'),
+        content: const Text('هل تريد استعادة نسخة احتياطية؟ سيتم استبدال جميع البيانات الحالية.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              // Note: File picker would be needed here for a full implementation
+              // For now, this is a placeholder
+              _showSnackBar(context, 'ميزة الاستعادة قيد التطوير');
             },
             child: const Text('تأكيد'),
           ),

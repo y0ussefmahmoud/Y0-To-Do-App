@@ -70,19 +70,22 @@ class TasksNotifier extends StateNotifier<List<Task>> {
   /// 
   /// يقوم بإضافة المهمة إلى قاعدة البيانات ثم تحديث الحالة
   /// إذا كانت الإشعارات مفعلة، يتم جدولة إشعار للمهمة
-  Future<void> add(Task task) async {
+  Future<void> addTask(Task task) async {
     try {
       await _repo.add(task);
+      state = [...state, task];
       
-      // جدولة إشعار إذا كانت الإشعارات مفعلة
-      final settings = _ref.read(settingsProvider);
-      if (settings.notificationsEnabled) {
-        final notificationService = _ref.read(notificationServiceProvider);
-        await notificationService.scheduleTaskNotification(task, settings.notificationMinutesBefore);
-        
-        // جدولة إشعار دقيق الوقت إذا كان مفعلاً
-        if (settings.exactTimeNotificationsEnabled) {
-          await notificationService.scheduleExactTimeNotification(task);
+      // جدولة إشعار للمهمة إذا كان لها تاريخ استحقاق
+      if (task.dueDate != null) {
+        final settings = _ref.read(settingsProvider);
+        if (settings.notificationsEnabled) {
+          final notificationService = _ref.read(notificationServiceProvider);
+          await notificationService.scheduleTaskNotification(task, settings.notificationMinutesBefore);
+          
+          // جدولة إشعار دقيق الوقت إذا كان مفعلاً
+          if (settings.exactTimeNotificationsEnabled) {
+            await notificationService.scheduleExactTimeNotification(task);
+          }
         }
       }
       
@@ -94,10 +97,13 @@ class TasksNotifier extends StateNotifier<List<Task>> {
       try {
         await refresh();
       } catch (refreshError) {
-        ErrorHandler.handleError(refreshError, null, context: 'TasksNotifier.add.refresh');
+        ErrorHandler.handleError(refreshError, stackTrace, context: 'TasksNotifier.add.refresh');
       }
     }
   }
+
+  /// إضافة مهمة (اسم مستعار لـ addTask للتوافق مع الشاشات القديمة)
+  Future<void> add(Task task) => addTask(task);
 
   /// تحديث مهمة موجودة
   /// 

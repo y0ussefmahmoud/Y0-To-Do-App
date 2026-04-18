@@ -11,7 +11,7 @@ import '../models/app_settings.dart';
 import '../providers/task_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/search_provider.dart';
-import 'add_task_screen.dart';
+import '../services/task_service.dart';
 import 'add_edit_task_screen.dart';
 
 /// 🏠 Y0 To-Do App - Neo-morphic Home Screen
@@ -528,6 +528,17 @@ class _HomeScreenNeoMorphicState extends ConsumerState<HomeScreenNeoMorphic> {
     );
   }
 
+  /// أيقونة فلتر الحالة
+  Widget _buildStatusFilterIcon(BuildContext context, TaskStatus status, bool isActive) {
+    return Icon(
+      status == TaskStatus.completed ? Icons.check_circle : Icons.pending,
+      size: 14,
+      color: isActive 
+          ? context.colorScheme.onPrimary 
+          : context.colorScheme.onSurfaceVariant,
+    );
+  }
+
   /// زر فلتر الحالة (مكتملة/غير مكتملة)
   Widget _buildStatusFilterButton(BuildContext context, TaskStatus status, TaskStatus? currentStatus, WidgetRef ref, List<Task> allTasks) {
     final isActive = status == currentStatus;
@@ -553,13 +564,7 @@ class _HomeScreenNeoMorphicState extends ConsumerState<HomeScreenNeoMorphic> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // أيقونة الفلتر
-            Icon(
-              status == TaskStatus.completed ? Icons.check_circle : Icons.pending,
-              size: 14,
-              color: isActive 
-                  ? context.colorScheme.onPrimary 
-                  : context.colorScheme.onSurfaceVariant,
-            ),
+            _buildStatusFilterIcon(context, status, isActive),
             
             const SizedBox(width: 4),
             
@@ -904,6 +909,60 @@ class _HomeScreenNeoMorphicState extends ConsumerState<HomeScreenNeoMorphic> {
 
   // ==================== TASK LIST ====================
   
+  /// مربع اختيار المهمة
+  Widget _buildTaskCheckbox(BuildContext context, WidgetRef ref, Task task) {
+    return GestureDetector(
+      onTap: () => _toggleTaskCompletion(context, ref, task),
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: _getPriorityColor(task.priority),
+            width: 2,
+          ),
+        ),
+        child: task.isDone
+            ? Icon(
+                Icons.check,
+                color: _getPriorityColor(task.priority),
+                size: 16,
+              )
+            : null,
+      ),
+    );
+  }
+  
+  /// تفاصيل المهمة
+  Widget _buildTaskDetails(BuildContext context, Task task) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          task.title,
+          style: context.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            decoration: task.isDone
+                ? TextDecoration.lineThrough
+                : null,
+            color: task.isDone
+                ? context.colorScheme.onSurface.withValues(alpha: 0.5)
+                : null,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          task.note ?? '',
+          style: context.textTheme.bodyMedium?.copyWith(
+            color: context.colorScheme.onSurfaceVariant,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+  
   /// قائمة المهام مع نظام الأولويات
   Widget _buildTaskList(BuildContext context, WidgetRef ref, List<Task> tasks) {
     return Column(
@@ -928,113 +987,79 @@ class _HomeScreenNeoMorphicState extends ConsumerState<HomeScreenNeoMorphic> {
               textDirection: TextDirection.rtl,
               children: [
                 // Checkbox
-                GestureDetector(
-                  onTap: () => _toggleTaskCompletion(context, ref, task),
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _getPriorityColor(task.priority),
-                        width: 2,
-                      ),
-                    ),
-                    child: task.isDone
-                        ? Icon(
-                            Icons.check,
-                            color: _getPriorityColor(task.priority),
-                            size: 16,
-                          )
-                        : null,
-                  ),
-                ),
+                _buildTaskCheckbox(context, ref, task),
                 
                 const SizedBox(width: Y0DesignSystem.spacing2),
                 
                 // Task Details
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        task.title,
-                        style: context.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          decoration: task.isDone
-                              ? TextDecoration.lineThrough
-                              : null,
-                          color: task.isDone
-                              ? context.colorScheme.onSurface.withValues(alpha: 0.5)
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        task.note ?? '',
-                        style: context.textTheme.bodyMedium?.copyWith(
-                          color: context.colorScheme.onSurfaceVariant,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: _buildTaskDetails(context, task),
                 ),
               ],
             ),
           ),
           
           // Priority Badge
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 4,
-            ),
-            decoration: BoxDecoration(
-              color: _getPriorityColor(task.priority).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: _getPriorityColor(task.priority),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  _getPriorityText(task.priority),
-                  style: TextStyle(
-                    color: _getPriorityColor(task.priority),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _buildPriorityBadge(context, task),
           
           // Edit and Delete Buttons
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.edit, size: 20),
-                onPressed: () => _editTask(context, ref, task),
-                color: context.colorScheme.primary,
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete, size: 20),
-                onPressed: () => _deleteTask(context, ref, task),
-                color: Colors.red,
-              ),
-            ],
+          _buildTaskActionButtons(context, ref, task),
+        ],
+      ),
+    );
+  }
+
+  /// 🎨 شارة الأولوية
+  Widget _buildPriorityBadge(BuildContext context, Task task) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: _getPriorityColor(task.priority).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: _getPriorityColor(task.priority),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            _getPriorityText(task.priority),
+            style: TextStyle(
+              color: _getPriorityColor(task.priority),
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  /// 🛠️ أزرار إجراءات المهمة (تعديل/حذف)
+  Widget _buildTaskActionButtons(BuildContext context, WidgetRef ref, Task task) {
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.edit, size: 20),
+          onPressed: () => _editTask(context, ref, task),
+          color: context.colorScheme.primary,
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete, size: 20),
+          onPressed: () => _deleteTask(context, ref, task),
+          color: Colors.red,
+        ),
+      ],
     );
   }
 
@@ -1124,24 +1149,12 @@ class _HomeScreenNeoMorphicState extends ConsumerState<HomeScreenNeoMorphic> {
   void _showAddTaskDialog(BuildContext context, WidgetRef ref) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const AddTaskScreen(),
+        builder: (context) => const AddEditTaskScreen(),
       ),
     );
   }
 
-  /// 📅 معالج إضافة حدث جديد (محجوز للاستخدام المستقبلي)
-  // void _handleAddEvent() {
-  //   // TODO: فتح شاشة إضافة حدث جديد
-  //   print('Add event pressed');
-  // }
-
-  /// 🔔 معالج إضافة إشعار جديد (محجوز للاستخدام المستقبلي)
-  // void _handleAddNotification() {
-  //   // TODO: فتح شاشة إضافة إشعار جديد
-  //   print('Add notification pressed');
-  // }
-
-  /// 👀 معالج عرض كل المهام
+  ///  معالج عرض كل المهام
   void _handleViewAll(BuildContext context, WidgetRef ref) {
     // إعادة تعيين جميع الفلاتر
     ref.read(taskFilterProvider.notifier).state = const TaskFilter();
@@ -1170,7 +1183,8 @@ class _HomeScreenNeoMorphicState extends ConsumerState<HomeScreenNeoMorphic> {
 
   /// ✅ معالج تبديل حالة إتمام المهمة
   void _toggleTaskCompletion(BuildContext context, WidgetRef ref, Task task) {
-    ref.read(tasksProvider.notifier).toggleDone(task.id);
+    final taskService = TaskService(ref);
+    taskService.toggleTaskCompletion(task.id);
     
     // إظهار رسالة تأكيد
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1190,7 +1204,8 @@ class _HomeScreenNeoMorphicState extends ConsumerState<HomeScreenNeoMorphic> {
       ),
     ).then((result) {
       if (result != null && result is Task) {
-        ref.read(tasksProvider.notifier).update(result);
+        final taskService = TaskService(ref);
+        taskService.updateTask(result);
       }
     });
   }
@@ -1208,12 +1223,15 @@ class _HomeScreenNeoMorphicState extends ConsumerState<HomeScreenNeoMorphic> {
             child: const Text('إلغاء'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ref.read(tasksProvider.notifier).delete(task.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('تم حذف المهمة بنجاح')),
-              );
+              final taskService = TaskService(ref);
+              await taskService.deleteTask(task.id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('تم حذف المهمة بنجاح')),
+                );
+              }
             },
             child: const Text('حذف', style: TextStyle(color: Colors.red)),
           ),

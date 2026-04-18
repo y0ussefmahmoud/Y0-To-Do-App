@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../models/app_settings.dart';
 import '../providers/ai_provider.dart';
+import '../utils/error_handler.dart';
 
 // Provider for the Hive box containing settings
 final settingsBoxProvider = Provider<Box<AppSettings>>((ref) {
@@ -20,11 +21,15 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       if (box.isNotEmpty) {
         final settings = box.getAt(0);
         if (settings != null) {
-          return settings;
+          // Migration: Handle null values from old database versions
+          // Use fromMap which has null-safe casting
+          return AppSettings.fromMap(settings.toMap());
         }
       }
     } catch (e) {
-      // If there's an error reading from box, use default settings
+      // If there's an error reading from box (e.g., null cast error), use default settings
+      // This handles the case where old database has null values in non-nullable fields
+      ErrorHandler.logWarning('Error reading settings from box: $e. Using default settings.');
     }
     return const AppSettings();
   }

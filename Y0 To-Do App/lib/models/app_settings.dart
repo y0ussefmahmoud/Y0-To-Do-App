@@ -90,16 +90,16 @@ class AppSettings {
 
   factory AppSettings.fromMap(Map<String, dynamic> map) {
     return AppSettings(
-      themeMode: map['themeMode'] ?? 'system',
-      language: map['language'] ?? 'ar',
-      notificationsEnabled: map['notificationsEnabled'] ?? true,
-      soundEnabled: map['soundEnabled'] ?? true,
-      speechRate: map['speechRate']?.toDouble() ?? 0.5,
-      speechVolume: map['speechVolume']?.toDouble() ?? 0.8,
-      speechPitch: map['speechPitch']?.toDouble() ?? 1.0,
-      notificationMinutesBefore: map['notificationMinutesBefore'] ?? 60,
-      exactTimeNotificationsEnabled: map['exactTimeNotificationsEnabled'] ?? false,
-      userName: map['userName'] ?? 'أحمد',
+      themeMode: map['themeMode'] as String? ?? 'system',
+      language: map['language'] as String? ?? 'ar',
+      notificationsEnabled: map['notificationsEnabled'] as bool? ?? true,
+      soundEnabled: map['soundEnabled'] as bool? ?? true,
+      speechRate: (map['speechRate'] as num?)?.toDouble() ?? 0.5,
+      speechVolume: (map['speechVolume'] as num?)?.toDouble() ?? 0.8,
+      speechPitch: (map['speechPitch'] as num?)?.toDouble() ?? 1.0,
+      notificationMinutesBefore: map['notificationMinutesBefore'] as int? ?? 60,
+      exactTimeNotificationsEnabled: map['exactTimeNotificationsEnabled'] as bool? ?? false,
+      userName: map['userName'] as String? ?? 'أحمد',
     );
   }
 
