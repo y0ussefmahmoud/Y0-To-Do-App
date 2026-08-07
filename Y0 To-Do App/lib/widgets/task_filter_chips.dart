@@ -1,3 +1,10 @@
+// Developed by:
+// - Arabic: م / يوسف محمود عبد الجواد
+// - English: Eng / Youssef Mahmoud Abdelgawad
+// - Business Website: https://y0ussef.com/
+// - Whatsapp: https://wa.me/201129334173
+// - Email: info@Y0ussef.com
+
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'package:flutter/material.dart';
@@ -19,47 +26,46 @@ class TaskFilterChips extends ConsumerWidget {
         filterNotifier.state = filter.copyWith(clearStatus: true);
         break;
       case 'status_pending':
-        filterNotifier.state = filter.copyWith(status: TaskStatus.pending);
+        filterNotifier.state = filter.toggleStatus(TaskStatus.pending);
         break;
       case 'status_completed':
-        filterNotifier.state = filter.copyWith(status: TaskStatus.completed);
+        filterNotifier.state = filter.toggleStatus(TaskStatus.completed);
         break;
       case 'priority_all':
-        filterNotifier.state = filter.copyWith(clearPriority: true);
+        filterNotifier.state = filter.copyWith(priorities: const {});
         break;
       case 'priority_high':
-        filterNotifier.state = filter.copyWith(priority: 2);
+        filterNotifier.state = filter.togglePriority(2);
         break;
       case 'priority_medium':
-        filterNotifier.state = filter.copyWith(priority: 1);
+        filterNotifier.state = filter.togglePriority(1);
         break;
       case 'priority_low':
-        filterNotifier.state = filter.copyWith(priority: 0);
+        filterNotifier.state = filter.togglePriority(0);
         break;
       case 'date_all':
-        filterNotifier.state = filter.copyWith(clearDateFilter: true);
+        filterNotifier.state = filter.copyWith(dateFilters: const {});
         break;
       case 'date_today':
-        filterNotifier.state = filter.copyWith(dateFilter: DateFilter.today);
+        filterNotifier.state = filter.toggleDateFilter(DateFilter.today);
         break;
       case 'date_week':
-        filterNotifier.state = filter.copyWith(dateFilter: DateFilter.thisWeek);
+        filterNotifier.state = filter.toggleDateFilter(DateFilter.thisWeek);
         break;
       case 'category_all':
-        filterNotifier.state = filter.copyWith(clearCategory: true);
+        filterNotifier.state = filter.copyWith(categories: const {});
         break;
       case 'reset':
         filterNotifier.state = filter.reset();
         break;
       default:
-        // Handle category filters (format: 'category_categoryName')
         if (value.startsWith('category_')) {
-          final categoryName = value.substring(9); // Remove 'category_' prefix
+          final categoryName = value.substring(9);
           final category = TaskCategory.values.firstWhere(
             (cat) => cat.name == categoryName,
             orElse: () => TaskCategory.personal,
           );
-          filterNotifier.state = filter.copyWith(category: category);
+          filterNotifier.state = filter.toggleCategory(category);
         }
         break;
     }
@@ -145,7 +151,6 @@ class TaskFilterChips extends ConsumerWidget {
                   ),
                 ],
                 const Spacer(),
-                // Hamburger menu for small screens
                 if (isSmallScreen)
                   PopupMenuButton<String>(
                     icon: Icon(
@@ -173,7 +178,7 @@ class TaskFilterChips extends ConsumerWidget {
                           children: [
                             Icon(Icons.schedule, size: 16),
                             const SizedBox(width: 6),
-                            const Text('الحالة: معلقة'),
+                            Text('الحالة: معلقة ${filter.status == TaskStatus.pending ? '✓' : ''}'),
                           ],
                         ),
                       ),
@@ -183,7 +188,7 @@ class TaskFilterChips extends ConsumerWidget {
                           children: [
                             Icon(Icons.check_circle, size: 16),
                             const SizedBox(width: 6),
-                            const Text('الحالة: مكتملة'),
+                            Text('الحالة: مكتملة ${filter.status == TaskStatus.completed ? '✓' : ''}'),
                           ],
                         ),
                       ),
@@ -194,7 +199,7 @@ class TaskFilterChips extends ConsumerWidget {
                           children: [
                             Icon(Icons.flag, size: 16),
                             const SizedBox(width: 6),
-                            const Text('الأولوية: الكل'),
+                            const Text('الأولوية: إعادة ضبط'),
                           ],
                         ),
                       ),
@@ -204,7 +209,7 @@ class TaskFilterChips extends ConsumerWidget {
                           children: [
                             Icon(Icons.priority_high, size: 16, color: Colors.red),
                             const SizedBox(width: 6),
-                            const Text('الأولوية: عالية'),
+                            Text('الأولوية: عالية ${filter.priorities.contains(2) ? '✓' : ''}'),
                           ],
                         ),
                       ),
@@ -214,7 +219,7 @@ class TaskFilterChips extends ConsumerWidget {
                           children: [
                             Icon(Icons.remove, size: 16, color: Colors.orange),
                             const SizedBox(width: 6),
-                            const Text('الأولوية: متوسطة'),
+                            Text('الأولوية: متوسطة ${filter.priorities.contains(1) ? '✓' : ''}'),
                           ],
                         ),
                       ),
@@ -224,7 +229,7 @@ class TaskFilterChips extends ConsumerWidget {
                           children: [
                             Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.green),
                             const SizedBox(width: 6),
-                            const Text('الأولوية: منخفضة'),
+                            Text('الأولوية: منخفضة ${filter.priorities.contains(0) ? '✓' : ''}'),
                           ],
                         ),
                       ),
@@ -235,7 +240,7 @@ class TaskFilterChips extends ConsumerWidget {
                           children: [
                             Icon(Icons.date_range, size: 16),
                             const SizedBox(width: 6),
-                            const Text('التاريخ: الكل'),
+                            const Text('التاريخ: إعادة ضبط'),
                           ],
                         ),
                       ),
@@ -245,7 +250,7 @@ class TaskFilterChips extends ConsumerWidget {
                           children: [
                             Icon(Icons.today, size: 16),
                             const SizedBox(width: 6),
-                            const Text('التاريخ: اليوم'),
+                            Text('التاريخ: اليوم ${filter.dateFilters.contains(DateFilter.today) ? '✓' : ''}'),
                           ],
                         ),
                       ),
@@ -255,7 +260,7 @@ class TaskFilterChips extends ConsumerWidget {
                           children: [
                             Icon(Icons.view_week, size: 16),
                             const SizedBox(width: 6),
-                            const Text('التاريخ: هذا الأسبوع'),
+                            Text('التاريخ: هذا الأسبوع ${filter.dateFilters.contains(DateFilter.thisWeek) ? '✓' : ''}'),
                           ],
                         ),
                       ),
@@ -266,7 +271,7 @@ class TaskFilterChips extends ConsumerWidget {
                           children: [
                             Icon(Icons.category, size: 16),
                             const SizedBox(width: 6),
-                            const Text('التصنيف: الكل'),
+                            const Text('التصنيف: إعادة ضبط'),
                           ],
                         ),
                       ),
@@ -276,7 +281,7 @@ class TaskFilterChips extends ConsumerWidget {
                           children: [
                             Icon(category.icon, size: 16, color: category.color),
                             const SizedBox(width: 6),
-                            Text('التصنيف: ${category.displayName}'),
+                            Text('التصنيف: ${category.displayName} ${filter.categories.contains(category) ? '✓' : ''}'),
                           ],
                         ),
                       )),
@@ -299,9 +304,7 @@ class TaskFilterChips extends ConsumerWidget {
             ),
           ),
 
-          // Show full filters on larger screens, hide on small screens
           if (!isSmallScreen) ...[
-            // الفلاتر الأفقية
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
@@ -313,23 +316,15 @@ class TaskFilterChips extends ConsumerWidget {
                   runSpacing: 6,
                   alignment: WrapAlignment.start,
                   children: [
-                    // الحالة
                     _buildCompactStatusFilters(filter, filterNotifier, context),
-                    
-                    // الأولوية
                     _buildCompactPriorityFilters(filter, filterNotifier, context),
-                    
-                    // التصنيف
                     _buildCompactCategoryFilters(filter, filterNotifier, context),
-                    
-                    // التاريخ
                     _buildCompactDateFilters(filter, filterNotifier, context),
                   ],
                 ),
               ),
             ),
 
-            // زر إعادة تعيين الفلاتر
             if (filter.isActive)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -343,7 +338,6 @@ class TaskFilterChips extends ConsumerWidget {
                 ),
               ),
           ] else ...[
-            // Show current active filters as chips on small screens
             if (filter.isActive)
               Wrap(
                 spacing: 8,
@@ -364,52 +358,49 @@ class TaskFilterChips extends ConsumerWidget {
                         fontSize: 12,
                       ),
                     ),
-                  if (filter.priority != null)
-                    Chip(
-                      label: Text('الأولوية: ${_getPriorityLabel(filter.priority!)}'),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        filterNotifier.state = filter.copyWith(clearPriority: true);
-                      },
-                      backgroundColor: _getPriorityColor(filter.priority!).withValues(alpha: 0.1),
-                      labelStyle: TextStyle(
-                        color: _getPriorityColor(filter.priority!),
-                        fontSize: 12,
-                      ),
-                    ),
-                  if (filter.category != null)
-                    Chip(
-                      label: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(filter.category!.icon, size: 12),
-                          const SizedBox(width: 4),
-                          Text(filter.category!.displayName),
-                        ],
-                      ),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        filterNotifier.state = filter.copyWith(clearCategory: true);
-                      },
-                      backgroundColor: filter.category!.color.withValues(alpha: 0.1),
-                      labelStyle: TextStyle(
-                        color: filter.category!.color,
-                        fontSize: 12,
-                      ),
-                    ),
-                  if (filter.dateFilter != null)
-                    Chip(
-                      label: Text('التاريخ: ${filter.dateFilter!.displayName}'),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        filterNotifier.state = filter.copyWith(clearDateFilter: true);
-                      },
-                      backgroundColor: Color(0xFF66BB6A).withValues(alpha: 0.3), // أخضر فاتح
-                      labelStyle: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontSize: 12,
-                      ),
-                    ),
+                  ...filter.priorities.map((priority) => Chip(
+                        label: Text('الأولوية: ${_getPriorityLabel(priority)}'),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () {
+                          filterNotifier.state = filter.togglePriority(priority);
+                        },
+                        backgroundColor: _getPriorityColor(priority).withValues(alpha: 0.1),
+                        labelStyle: TextStyle(
+                          color: _getPriorityColor(priority),
+                          fontSize: 12,
+                        ),
+                      )),
+                  ...filter.categories.map((category) => Chip(
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(category.icon, size: 12),
+                            const SizedBox(width: 4),
+                            Text(category.displayName),
+                          ],
+                        ),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () {
+                          filterNotifier.state = filter.toggleCategory(category);
+                        },
+                        backgroundColor: category.color.withValues(alpha: 0.1),
+                        labelStyle: TextStyle(
+                          color: category.color,
+                          fontSize: 12,
+                        ),
+                      )),
+                  ...filter.dateFilters.map((dateFilter) => Chip(
+                        label: Text('التاريخ: ${dateFilter.displayName}'),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () {
+                          filterNotifier.state = filter.toggleDateFilter(dateFilter);
+                        },
+                        backgroundColor: const Color(0xFF66BB6A).withValues(alpha: 0.3),
+                        labelStyle: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontSize: 12,
+                        ),
+                      )),
                 ],
               ),
           ],
@@ -436,18 +427,17 @@ class TaskFilterChips extends ConsumerWidget {
         ),
         FilterChip(
           label: const Text('الكل', style: TextStyle(fontSize: 10)),
-          selected: filter.category == null,
+          selected: filter.categories.isEmpty,
           onSelected: (selected) {
-            filterNotifier.state = filter.copyWith(
-              clearCategory: !selected,
-              category: selected ? null : null,
-            );
+            if (selected) {
+              filterNotifier.state = filter.copyWith(categories: const {});
+            }
           },
           backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
-          selectedColor: Color(0xFF66BB6A).withValues(alpha: 0.3), // أخضر فاتح
+          selectedColor: const Color(0xFF66BB6A).withValues(alpha: 0.3),
           checkmarkColor: Theme.of(context).primaryColor,
           labelStyle: TextStyle(
-            color: filter.category == null
+            color: filter.categories.isEmpty
                 ? Theme.of(context).primaryColor
                 : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             fontSize: 10,
@@ -455,7 +445,7 @@ class TaskFilterChips extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         ),
         ...TaskCategory.values.map((category) {
-          final isSelected = filter.category == category;
+          final isSelected = filter.categories.contains(category);
           return FilterChip(
             label: Row(
               mainAxisSize: MainAxisSize.min,
@@ -471,10 +461,7 @@ class TaskFilterChips extends ConsumerWidget {
             ),
             selected: isSelected,
             onSelected: (selected) {
-              filterNotifier.state = filter.copyWith(
-                clearCategory: !selected,
-                category: selected ? category : null,
-              );
+              filterNotifier.state = filter.toggleCategory(category);
             },
             backgroundColor: category.color.withValues(alpha: 0.1),
             selectedColor: category.color.withValues(alpha: 0.3),
@@ -490,7 +477,6 @@ class TaskFilterChips extends ConsumerWidget {
     );
   }
 
-  // Compact filter methods for Wrap layout
   Widget _buildCompactStatusFilters(
     TaskFilter filter,
     StateController<TaskFilter> filterNotifier,
@@ -513,14 +499,11 @@ class TaskFilterChips extends ConsumerWidget {
             label: Text(status.displayName, style: const TextStyle(fontSize: 10)),
             selected: isSelected,
             onSelected: (selected) {
-              filterNotifier.state = filter.copyWith(
-                clearStatus: !selected,
-                status: selected ? status : null,
-              );
+              filterNotifier.state = filter.toggleStatus(status);
             },
             backgroundColor: Colors.grey.shade100,
-            selectedColor: Color(0xFF66BB6A).withValues(alpha: 0.3), // أخضر فاتح
-            checkmarkColor: Color.fromARGB(255, 0, 0, 0).withValues(alpha: 0.3), // أخضر فاتح
+            selectedColor: const Color(0xFF66BB6A).withValues(alpha: 0.3),
+            checkmarkColor: const Color.fromARGB(255, 0, 0, 0).withValues(alpha: 0.3),
             labelStyle: TextStyle(
               color: isSelected
                   ? Theme.of(context).primaryColor
@@ -540,7 +523,6 @@ class TaskFilterChips extends ConsumerWidget {
     BuildContext context,
   ) {
     final priorities = [
-      {'value': null, 'label': 'الكل', 'color': Colors.grey},
       {'value': 0, 'label': 'منخفضة', 'color': Colors.green},
       {'value': 1, 'label': 'متوسطة', 'color': Colors.orange},
       {'value': 2, 'label': 'عالية', 'color': Colors.red},
@@ -557,17 +539,34 @@ class TaskFilterChips extends ConsumerWidget {
             color: Color(0xFF64748B),
           ),
         ),
-        ...priorities.map((priority) {
-          final isSelected = filter.priority == priority['value'];
-          final color = priority['color'] as Color;
+        FilterChip(
+          label: const Text('الكل', style: TextStyle(fontSize: 10)),
+          selected: filter.priorities.isEmpty,
+          onSelected: (selected) {
+            if (selected) {
+              filterNotifier.state = filter.copyWith(priorities: const {});
+            }
+          },
+          backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+          selectedColor: const Color(0xFF66BB6A).withValues(alpha: 0.3),
+          checkmarkColor: Theme.of(context).primaryColor,
+          labelStyle: TextStyle(
+            color: filter.priorities.isEmpty
+                ? Theme.of(context).primaryColor
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            fontSize: 10,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        ),
+        ...priorities.map((priorityInfo) {
+          final priorityVal = priorityInfo['value'] as int;
+          final isSelected = filter.priorities.contains(priorityVal);
+          final color = priorityInfo['color'] as Color;
           return FilterChip(
-            label: Text(priority['label'] as String, style: const TextStyle(fontSize: 10)),
+            label: Text(priorityInfo['label'] as String, style: const TextStyle(fontSize: 10)),
             selected: isSelected,
             onSelected: (selected) {
-              filterNotifier.state = filter.copyWith(
-                clearPriority: !selected,
-                priority: selected ? priority['value'] as int? : null,
-              );
+              filterNotifier.state = filter.togglePriority(priorityVal);
             },
             backgroundColor: color.withValues(alpha: 0.1),
             selectedColor: color.withValues(alpha: 0.3),
@@ -599,19 +598,35 @@ class TaskFilterChips extends ConsumerWidget {
             color: Color(0xFF64748B),
           ),
         ),
-        ...DateFilter.values.map((dateFilter) {
-          final isSelected = filter.dateFilter == dateFilter;
+        FilterChip(
+          label: const Text('الكل', style: TextStyle(fontSize: 10)),
+          selected: filter.dateFilters.isEmpty,
+          onSelected: (selected) {
+            if (selected) {
+              filterNotifier.state = filter.copyWith(dateFilters: const {});
+            }
+          },
+          backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+          selectedColor: const Color(0xFF66BB6A).withValues(alpha: 0.3),
+          checkmarkColor: Theme.of(context).primaryColor,
+          labelStyle: TextStyle(
+            color: filter.dateFilters.isEmpty
+                ? Theme.of(context).primaryColor
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            fontSize: 10,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        ),
+        ...DateFilter.values.where((d) => d != DateFilter.all).map((dateFilter) {
+          final isSelected = filter.dateFilters.contains(dateFilter);
           return FilterChip(
             label: Text(dateFilter.displayName, style: const TextStyle(fontSize: 10)),
             selected: isSelected,
             onSelected: (selected) {
-              filterNotifier.state = filter.copyWith(
-                clearDateFilter: !selected,
-                dateFilter: selected ? dateFilter : null,
-              );
+              filterNotifier.state = filter.toggleDateFilter(dateFilter);
             },
             backgroundColor: Colors.grey.shade100,
-            selectedColor: Color(0xFF66BB6A).withValues(alpha: 0.3), // أخضر فاتح
+            selectedColor: const Color(0xFF66BB6A).withValues(alpha: 0.3),
             checkmarkColor: Theme.of(context).primaryColor,
             labelStyle: TextStyle(
               color: isSelected

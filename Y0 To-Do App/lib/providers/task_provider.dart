@@ -1,8 +1,16 @@
+// Developed by:
+// - Arabic: م / يوسف محمود عبد الجواد
+// - English: Eng / Youssef Mahmoud Abdelgawad
+// - Business Website: https://y0ussef.com/
+// - Whatsapp: https://wa.me/201129334173
+// - Email: info@Y0ussef.com
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/task.dart';
+import '../models/task_category.dart';
 import '../models/task_filter.dart';
 import '../repositories/task_repository.dart';
 import '../providers/settings_provider.dart';
@@ -70,19 +78,22 @@ class TasksNotifier extends StateNotifier<List<Task>> {
   /// 
   /// يقوم بإضافة المهمة إلى قاعدة البيانات ثم تحديث الحالة
   /// إذا كانت الإشعارات مفعلة، يتم جدولة إشعار للمهمة
-  Future<void> add(Task task) async {
+  Future<void> addTask(Task task) async {
     try {
       await _repo.add(task);
+      state = [...state, task];
       
-      // جدولة إشعار إذا كانت الإشعارات مفعلة
-      final settings = _ref.read(settingsProvider);
-      if (settings.notificationsEnabled) {
-        final notificationService = _ref.read(notificationServiceProvider);
-        await notificationService.scheduleTaskNotification(task, settings.notificationMinutesBefore);
-        
-        // جدولة إشعار دقيق الوقت إذا كان مفعلاً
-        if (settings.exactTimeNotificationsEnabled) {
-          await notificationService.scheduleExactTimeNotification(task);
+      // جدولة إشعار للمهمة إذا كان لها تاريخ استحقاق
+      if (task.dueDate != null) {
+        final settings = _ref.read(settingsProvider);
+        if (settings.notificationsEnabled) {
+          final notificationService = _ref.read(notificationServiceProvider);
+          await notificationService.scheduleTaskNotification(task, settings.notificationMinutesBefore);
+          
+          // جدولة إشعار دقيق الوقت إذا كان مفعلاً
+          if (settings.exactTimeNotificationsEnabled) {
+            await notificationService.scheduleExactTimeNotification(task);
+          }
         }
       }
       
@@ -94,10 +105,13 @@ class TasksNotifier extends StateNotifier<List<Task>> {
       try {
         await refresh();
       } catch (refreshError) {
-        ErrorHandler.handleError(refreshError, null, context: 'TasksNotifier.add.refresh');
+        ErrorHandler.handleError(refreshError, stackTrace, context: 'TasksNotifier.add.refresh');
       }
     }
   }
+
+  /// إضافة مهمة (اسم مستعار لـ addTask للتوافق مع الشاشات القديمة)
+  Future<void> add(Task task) => addTask(task);
 
   /// تحديث مهمة موجودة
   /// 
@@ -216,7 +230,7 @@ class TasksNotifier extends StateNotifier<List<Task>> {
   List<Task> getFilteredTasks(TaskFilter filter) {
     List<Task> tasks = _repo.getAll();
 
-    // فلترة حسب الحالة
+    // فلترة حسب الحالة (اختيار فردي)
     if (filter.status != null) {
       switch (filter.status!) {
         case TaskStatus.pending:
@@ -226,66 +240,54 @@ class TasksNotifier extends StateNotifier<List<Task>> {
           tasks = tasks.where((task) => task.isDone).toList();
           break;
         case TaskStatus.all:
-          // لا تغيير
           break;
       }
     }
 
-    // فلترة حسب الأولوية
-    if (filter.priority != null) {
-      tasks = tasks.where((task) => task.priority == filter.priority).toList();
+    // فلترة حسب الأولوية (multi-select — OR بين المختارات)
+    if (filter.priorities.isNotEmpty) {
+      tasks = tasks.where((task) => filter.priorities.contains(task.priority)).toList();
     }
 
-    // فلترة حسب التصنيف
-    if (filter.category != null) {
-      tasks = tasks.where((task) => task.safeCategory == filter.category).toList();
+    // فلترة حسب التصنيف (multi-select — OR بين المختارات)
+    if (filter.categories.isNotEmpty) {
+      tasks = tasks.where((task) => filter.categories.contains(task.safeCategory)).toList();
     }
 
-    // فلترة حسب التاريخ
-    if (filter.dateFilter != null) {
+    // فلترة حسب التاريخ (multi-select — OR بين المختارات)
+    if (filter.dateFilters.isNotEmpty) {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final weekStart = today.subtract(Duration(days: today.weekday - 1));
       final weekEnd = weekStart.add(const Duration(days: 6));
 
-      switch (filter.dateFilter!) {
-        case DateFilter.today:
-          tasks = tasks.where((task) {
-            if (task.dueDate == null) return false;
-            final taskDate = DateTime(
-              task.dueDate!.year,
-              task.dueDate!.month,
-              task.dueDate!.day,
-            );
-            return taskDate.isAtSameMomentAs(today);
-          }).toList();
-          break;
-        case DateFilter.thisWeek:
-          tasks = tasks.where((task) {
-            if (task.dueDate == null) return false;
-            final taskDate = DateTime(
-              task.dueDate!.year,
-              task.dueDate!.month,
-              task.dueDate!.day,
-            );
-            return !taskDate.isBefore(weekStart) && !taskDate.isAfter(weekEnd);
-          }).toList();
-          break;
-        case DateFilter.overdue:
-          tasks = tasks.where((task) {
-            if (task.dueDate == null) return false;
-            final taskDate = DateTime(
-              task.dueDate!.year,
-              task.dueDate!.month,
-              task.dueDate!.day,
-            );
-            return taskDate.isBefore(today) && !task.isDone;
-          }).toList();
-          break;
-        case DateFilter.all:
-          // لا تغيير
-          break;
-      }
+      tasks = tasks.where((task) {
+        for (final dateFilter in filter.dateFilters) {
+          switch (dateFilter) {
+            case DateFilter.today:
+              if (task.dueDate != null) {
+                final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+                if (taskDate.isAtSameMomentAs(today)) return true;
+              }
+              break;
+            case DateFilter.thisWeek:
+              if (task.dueDate != null) {
+                final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+                if (!taskDate.isBefore(weekStart) && !taskDate.isAfter(weekEnd)) return true;
+              }
+              break;
+            case DateFilter.overdue:
+              if (task.dueDate != null) {
+                final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+                if (taskDate.isBefore(today) && !task.isDone) return true;
+              }
+              break;
+            case DateFilter.all:
+              return true;
+          }
+        }
+        return false;
+      }).toList();
     }
 
     return tasks;
@@ -391,13 +393,6 @@ final filteredTasksProvider = Provider<List<Task>>((ref) {
   final tasks = ref.watch(tasksProvider);
   final filter = ref.watch(taskFilterProvider);
   
-  // Reset pagination when filter changes
-  ref.listen(taskFilterProvider, (previous, next) {
-    if (previous != next) {
-      ref.read(currentPageProvider.notifier).state = 1;
-    }
-  });
-  
   if (!filter.isActive) {
     return tasks;
   }
@@ -460,3 +455,127 @@ final hasMorePagesProvider = Provider<bool>((ref) {
 final isLoadingProvider = StateProvider<bool>((ref) {
   return false;
 });
+
+/// نموذج يحتوي على إحصائيات عدديّة للمهام لتقليل عمليات التصفية المتكررة
+class TaskCounts {
+  final int completed;
+  final int pending;
+  final int archived;
+  final int archivedOlderThanMonth;
+  final int activePending;
+  final int today;
+  final int thisWeek;
+  final int overdue;
+  final int priorityHigh;
+  final int priorityMedium;
+  final int priorityLow;
+  final Map<TaskCategory, int> categoryCounts;
+
+  const TaskCounts({
+    required this.completed,
+    required this.pending,
+    required this.archived,
+    required this.archivedOlderThanMonth,
+    required this.activePending,
+    required this.today,
+    required this.thisWeek,
+    required this.overdue,
+    required this.priorityHigh,
+    required this.priorityMedium,
+    required this.priorityLow,
+    required this.categoryCounts,
+  });
+}
+
+/// Provider لحساب أعداد المهام وتخزينها مؤقتاً (Memoized)
+final taskCountsProvider = Provider<TaskCounts>((ref) {
+  final tasks = ref.watch(tasksProvider);
+  
+  int completed = 0;
+  int pending = 0;
+  int archived = 0;
+  int archivedOlderThanMonth = 0;
+  int activePending = 0;
+  int today = 0;
+  int thisWeek = 0;
+  int overdue = 0;
+  int priorityHigh = 0;
+  int priorityMedium = 0;
+  int priorityLow = 0;
+  final categoryCounts = <TaskCategory, int>{};
+  
+  for (final c in TaskCategory.values) {
+    categoryCounts[c] = 0;
+  }
+  
+  final now = DateTime.now();
+  final monthAgo = now.subtract(const Duration(days: 30));
+  final todayDate = DateTime(now.year, now.month, now.day);
+  final weekStart = todayDate.subtract(Duration(days: todayDate.weekday - 1));
+  final weekEnd = weekStart.add(const Duration(days: 6));
+  
+  for (final task in tasks) {
+    final isOlderThanMonth = task.dueDate != null && task.dueDate!.isBefore(monthAgo);
+    final isTaskArchived = task.isArchived;
+
+    if (isTaskArchived) {
+      archived++;
+      if (isOlderThanMonth && !task.isDone) {
+        archivedOlderThanMonth++;
+      }
+    } else {
+      activePending++;
+    }
+
+    if (task.isDone) {
+      completed++;
+    } else {
+      pending++;
+    }
+    
+    if (task.dueDate != null) {
+      final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+      if (taskDate.isAtSameMomentAs(todayDate)) {
+        today++;
+      }
+      if (!taskDate.isBefore(weekStart) && !taskDate.isAfter(weekEnd)) {
+        thisWeek++;
+      }
+      if (taskDate.isBefore(todayDate) && !task.isDone) {
+        overdue++;
+      }
+    }
+    
+    switch (task.priority) {
+      case 2:
+        priorityHigh++;
+        break;
+      case 1:
+        priorityMedium++;
+        break;
+      case 0:
+      default:
+        priorityLow++;
+        break;
+    }
+    
+    final cat = task.safeCategory;
+    categoryCounts[cat] = (categoryCounts[cat] ?? 0) + 1;
+  }
+  
+  return TaskCounts(
+    completed: completed,
+    pending: pending,
+    archived: archived,
+    archivedOlderThanMonth: archivedOlderThanMonth,
+    activePending: activePending,
+    today: today,
+    thisWeek: thisWeek,
+    overdue: overdue,
+    priorityHigh: priorityHigh,
+    priorityMedium: priorityMedium,
+    priorityLow: priorityLow,
+    categoryCounts: categoryCounts,
+  );
+});
+

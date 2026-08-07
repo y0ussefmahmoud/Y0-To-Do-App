@@ -1,3 +1,10 @@
+// Developed by:
+// - Arabic: م / يوسف محمود عبد الجواد
+// - English: Eng / Youssef Mahmoud Abdelgawad
+// - Business Website: https://y0ussef.com/
+// - Whatsapp: https://wa.me/201129334173
+// - Email: info@Y0ussef.com
+
 import 'package:flutter/material.dart';
 
 /// 🎨 Y0 To-Do App Design System - Editorial Neo-Minimalism
@@ -12,8 +19,7 @@ import 'package:flutter/material.dart';
 /// - RTL-optimized typography scale
 /// - Ambient shadows instead of harsh shadows
 /// 
-/// @author Y0 Development Team
-/// @version 2.4.0
+
 class Y0DesignSystem {
   Y0DesignSystem._(); // Private constructor for singleton pattern
 

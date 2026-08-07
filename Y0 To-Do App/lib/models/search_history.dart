@@ -1,3 +1,10 @@
+// Developed by:
+// - Arabic: م / يوسف محمود عبد الجواد
+// - English: Eng / Youssef Mahmoud Abdelgawad
+// - Business Website: https://y0ussef.com/
+// - Whatsapp: https://wa.me/201129334173
+// - Email: info@Y0ussef.com
+
 import 'package:hive/hive.dart';
 
 part 'search_history.g.dart';
@@ -40,5 +47,25 @@ class SearchHistory extends HiveObject {
   @override
   String toString() {
     return 'SearchHistory(id: $id, query: $query, timestamp: $timestamp, resultCount: $resultCount)';
+  }
+
+  /// Convert SearchHistory to JSON for backup
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'query': query,
+      'timestamp': timestamp.toIso8601String(),
+      'resultCount': resultCount,
+    };
+  }
+
+  /// Create SearchHistory from JSON for restore
+  factory SearchHistory.fromJson(Map<String, dynamic> json) {
+    return SearchHistory(
+      id: json['id'] as String,
+      query: json['query'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      resultCount: json['resultCount'] as int,
+    );
   }
 }

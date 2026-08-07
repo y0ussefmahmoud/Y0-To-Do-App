@@ -1,3 +1,10 @@
+// Developed by:
+// - Arabic: م / يوسف محمود عبد الجواد
+// - English: Eng / Youssef Mahmoud Abdelgawad
+// - Business Website: https://y0ussef.com/
+// - Whatsapp: https://wa.me/201129334173
+// - Email: info@Y0ussef.com
+
 // ignore_for_file: unused_local_variable, prefer_const_constructors
 
 import 'package:flutter/material.dart';
@@ -9,7 +16,7 @@ import 'models/task.dart';
 import 'models/task_category.dart';
 import 'models/search_history.dart';
 import 'models/app_settings.dart';
-import 'screens/home_screen_neomorphic.dart';
+import 'screens/home/home_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/statistics_screen.dart';
 import 'providers/settings_provider.dart';
@@ -138,8 +145,49 @@ Future<void> main() async {
     
     try {
       ErrorHandler.logInfo('Opening settingsBox...');
-      settingsBox = await Hive.openBox<AppSettings>('settingsBox');
-      ErrorHandler.logSuccess('settingsBox opened');
+      
+      // Try to open the box with migration handling
+      try {
+        settingsBox = await Hive.openBox<AppSettings>('settingsBox');
+        
+        // Migration: Check and fix null values if needed
+        if (settingsBox.isNotEmpty) {
+          try {
+            final oldSettings = settingsBox.getAt(0);
+            if (oldSettings != null) {
+              // Try to access all fields to trigger null cast if any
+              final test = AppSettings(
+                themeMode: oldSettings.themeMode,
+                language: oldSettings.language,
+                notificationsEnabled: oldSettings.notificationsEnabled,
+                soundEnabled: oldSettings.soundEnabled,
+                speechRate: oldSettings.speechRate,
+                speechVolume: oldSettings.speechVolume,
+                speechPitch: oldSettings.speechPitch,
+                notificationMinutesBefore: oldSettings.notificationMinutesBefore,
+                exactTimeNotificationsEnabled: oldSettings.exactTimeNotificationsEnabled,
+                userName: oldSettings.userName,
+              );
+              // If we get here, data is valid
+              ErrorHandler.logSuccess('settingsBox opened and validated');
+            }
+          } catch (castError) {
+            // Null cast error detected, need to migrate
+            ErrorHandler.logWarning('Null cast error in settingsBox. Attempting migration...');
+            await Hive.deleteBoxFromDisk('settingsBox');
+            settingsBox = await Hive.openBox<AppSettings>('settingsBox');
+            ErrorHandler.logSuccess('settingsBox migrated and recreated');
+          }
+        } else {
+          ErrorHandler.logSuccess('settingsBox opened (empty)');
+        }
+      } catch (e) {
+        // If opening fails completely, delete and recreate
+        ErrorHandler.logWarning('Failed to open settingsBox. Attempting to recreate...');
+        await Hive.deleteBoxFromDisk('settingsBox');
+        settingsBox = await Hive.openBox<AppSettings>('settingsBox');
+        ErrorHandler.logSuccess('settingsBox recreated successfully');
+      }
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, context: 'Failed to open settingsBox');
       rethrow; // Settings box is critical

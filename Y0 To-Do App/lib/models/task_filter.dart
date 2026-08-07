@@ -1,3 +1,10 @@
+// Developed by:
+// - Arabic: م / يوسف محمود عبد الجواد
+// - English: Eng / Youssef Mahmoud Abdelgawad
+// - Business Website: https://y0ussef.com/
+// - Whatsapp: https://wa.me/201129334173
+// - Email: info@Y0ussef.com
+
 import 'task_category.dart';
 
 enum TaskStatus {
@@ -41,72 +48,120 @@ extension DateFilterExtension on DateFilter {
   }
 }
 
+/// فلتر المهام مع دعم تعدد الاختيارات
+///
+/// القواعد:
+/// - [status]: اختيار فردي فقط (معلقة أو مكتملة — لا يجتمعان)
+/// - [priorities]: Set — يمكن اختيار أكثر من أولوية في آن واحد
+/// - [categories]: Set — يمكن اختيار أكثر من فئة في آن واحد
+/// - [dateFilters]: Set — يمكن اختيار أكثر من فلتر تاريخ (اليوم + هذا الأسبوع مثلاً)
 class TaskFilter {
   final TaskStatus? status;
-  final int? priority;
-  final TaskCategory? category;
-  final DateFilter? dateFilter;
+  final Set<int> priorities;
+  final Set<TaskCategory> categories;
+  final Set<DateFilter> dateFilters;
 
   const TaskFilter({
     this.status,
-    this.priority,
-    this.category,
-    this.dateFilter,
+    this.priorities = const {},
+    this.categories = const {},
+    this.dateFilters = const {},
   });
+
+  /// تبديل أولوية (إضافة إن لم تكن موجودة، حذف إن كانت)
+  TaskFilter togglePriority(int priority) {
+    final newPriorities = Set<int>.from(priorities);
+    if (newPriorities.contains(priority)) {
+      newPriorities.remove(priority);
+    } else {
+      newPriorities.add(priority);
+    }
+    return copyWith(priorities: newPriorities);
+  }
+
+  /// تبديل فئة
+  TaskFilter toggleCategory(TaskCategory category) {
+    final newCategories = Set<TaskCategory>.from(categories);
+    if (newCategories.contains(category)) {
+      newCategories.remove(category);
+    } else {
+      newCategories.add(category);
+    }
+    return copyWith(categories: newCategories);
+  }
+
+  /// تبديل فلتر تاريخ
+  TaskFilter toggleDateFilter(DateFilter dateFilter) {
+    final newDateFilters = Set<DateFilter>.from(dateFilters);
+    if (newDateFilters.contains(dateFilter)) {
+      newDateFilters.remove(dateFilter);
+    } else {
+      newDateFilters.add(dateFilter);
+    }
+    return copyWith(dateFilters: newDateFilters);
+  }
+
+  /// تبديل حالة المهمة (اختيار فردي — يُلغى إن نُقر مرة ثانية)
+  TaskFilter toggleStatus(TaskStatus newStatus) {
+    if (status == newStatus) {
+      return copyWith(clearStatus: true);
+    }
+    return copyWith(status: newStatus);
+  }
 
   TaskFilter copyWith({
     TaskStatus? status,
-    int? priority,
-    TaskCategory? category,
-    DateFilter? dateFilter,
+    Set<int>? priorities,
+    Set<TaskCategory>? categories,
+    Set<DateFilter>? dateFilters,
     bool clearStatus = false,
-    bool clearPriority = false,
-    bool clearCategory = false,
-    bool clearDateFilter = false,
   }) {
     return TaskFilter(
       status: clearStatus ? null : (status ?? this.status),
-      priority: clearPriority ? null : (priority ?? this.priority),
-      category: clearCategory ? null : (category ?? this.category),
-      dateFilter: clearDateFilter ? null : (dateFilter ?? this.dateFilter),
+      priorities: priorities ?? this.priorities,
+      categories: categories ?? this.categories,
+      dateFilters: dateFilters ?? this.dateFilters,
     );
   }
 
   bool get isActive {
-    return status != null || 
-           priority != null || 
-           category != null || 
-           dateFilter != null;
+    return status != null ||
+        priorities.isNotEmpty ||
+        categories.isNotEmpty ||
+        dateFilters.isNotEmpty;
   }
 
   int get activeFiltersCount {
     int count = 0;
     if (status != null) count++;
-    if (priority != null) count++;
-    if (category != null) count++;
-    if (dateFilter != null) count++;
+    count += priorities.length;
+    count += categories.length;
+    count += dateFilters.length;
     return count;
   }
 
-  TaskFilter reset() {
-    return const TaskFilter();
-  }
+  TaskFilter reset() => const TaskFilter();
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is TaskFilter &&
-        other.status == status &&
-        other.priority == priority &&
-        other.category == category &&
-        other.dateFilter == dateFilter;
+    if (other is! TaskFilter) return false;
+    if (other.status != status) return false;
+    if (other.priorities.length != priorities.length) return false;
+    if (other.categories.length != categories.length) return false;
+    if (other.dateFilters.length != dateFilters.length) return false;
+    return other.priorities.containsAll(priorities) &&
+        other.categories.containsAll(categories) &&
+        other.dateFilters.containsAll(dateFilters);
   }
 
   @override
   int get hashCode {
-    return status.hashCode ^
-        priority.hashCode ^
-        category.hashCode ^
-        dateFilter.hashCode;
+    return Object.hash(
+      status,
+      Object.hashAllUnordered(priorities),
+      Object.hashAllUnordered(categories),
+      Object.hashAllUnordered(dateFilters),
+    );
   }
 }

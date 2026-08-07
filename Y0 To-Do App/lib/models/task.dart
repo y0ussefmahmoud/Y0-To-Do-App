@@ -1,3 +1,10 @@
+// Developed by:
+// - Arabic: م / يوسف محمود عبد الجواد
+// - English: Eng / Youssef Mahmoud Abdelgawad
+// - Business Website: https://y0ussef.com/
+// - Whatsapp: https://wa.me/201129334173
+// - Email: info@Y0ussef.com
+
 import 'package:hive/hive.dart';
 import 'task_category.dart';
 
@@ -17,6 +24,13 @@ part 'task.g.dart';
 ///   dueDate: DateTime.now().add(Duration(days: 1)),
 /// );
 /// ```
+/// Sentinel class: يميّز بين "لا قيمة محددة" و null الصريحة في copyWith
+class _Unset {
+  const _Unset();
+}
+
+const _unset = _Unset();
+
 @HiveType(typeId: 1)
 class Task {
   /// معرف فريد للمهمة (UUID)
@@ -75,23 +89,36 @@ class Task {
   /// Getter للحصول على التصنيف مع قيمة افتراضية آمنة
   TaskCategory get safeCategory => category ?? TaskCategory.general;
 
+  /// التحقق مما إذا كانت المهمة ينطبق عليها شرط الأرشيف
+  /// المهام المكتملة أو التي يمر عليها أكثر من 30 يوماً تذهب للأرشيف تلقائياً
+  bool get isArchived {
+    if (isDone) return true;
+    if (dueDate != null) {
+      final monthAgo = DateTime.now().subtract(const Duration(days: 30));
+      return dueDate!.isBefore(monthAgo);
+    }
+    return false;
+  }
+
   /// إنشاء نسخة جديدة من المهمة مع تعديل بعض الخصائص
   /// 
   /// يستخدم لتحديث المهمة دون تعديل النسخة الأصلية
   /// جميع المعاملات اختيارية، إذا لم يتم تمريرها يتم استخدام القيم الحالية
+  /// لمسح حقل nullable مثل dueDate أو note، مرّر null صراحةً
   /// 
   /// مثال:
   /// ```dart
   /// final updatedTask = task.copyWith(
   ///   title: 'عنوان جديد',
+  ///   dueDate: null,  // يحذف التاريخ
   ///   isDone: true,
   /// );
   /// ```
   Task copyWith({
     String? id,
     String? title,
-    String? note,
-    DateTime? dueDate,
+    Object? note = _unset,
+    Object? dueDate = _unset,
     int? priority,
     bool? isDone,
     TaskCategory? category,
@@ -99,11 +126,44 @@ class Task {
     return Task(
       id: id ?? this.id,
       title: title ?? this.title,
-      note: note ?? this.note,
-      dueDate: dueDate ?? this.dueDate,
+      note: note is _Unset ? this.note : note as String?,
+      dueDate: dueDate is _Unset ? this.dueDate : dueDate as DateTime?,
       priority: priority ?? this.priority,
       isDone: isDone ?? this.isDone,
       category: category ?? this.category,
+    );
+  }
+
+  /// Convert Task to JSON for backup
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'note': note,
+      'dueDate': dueDate?.toIso8601String(),
+      'priority': priority,
+      'isDone': isDone,
+      'category': category?.name,
+    };
+  }
+
+  /// Create Task from JSON for restore
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      note: json['note'] as String?,
+      dueDate: json['dueDate'] != null 
+          ? DateTime.parse(json['dueDate'] as String)
+          : null,
+      priority: json['priority'] as int,
+      isDone: json['isDone'] as bool,
+      category: json['category'] != null
+          ? TaskCategory.values.firstWhere(
+              (e) => e.name == json['category'] as String,
+              orElse: () => TaskCategory.general,
+            )
+          : TaskCategory.general,
     );
   }
 }

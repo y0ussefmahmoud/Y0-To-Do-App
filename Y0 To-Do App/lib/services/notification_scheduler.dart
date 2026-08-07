@@ -1,3 +1,10 @@
+// Developed by:
+// - Arabic: م / يوسف محمود عبد الجواد
+// - English: Eng / Youssef Mahmoud Abdelgawad
+// - Business Website: https://y0ussef.com/
+// - Whatsapp: https://wa.me/201129334173
+// - Email: info@Y0ussef.com
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -53,7 +60,7 @@ class NotificationScheduler {
       }
 
       await _plugin.zonedSchedule(
-        task.id.hashCode,
+        (task.id.hashCode & 0x7FFFFFFF),
         'تذكير بمهمة',
         task.title,
         tz.TZDateTime.from(notificationTime, tz.local),
@@ -124,7 +131,7 @@ class NotificationScheduler {
       }
 
       await _plugin.zonedSchedule(
-        task.id.hashCode + 2000,
+        ((task.id.hashCode + 2000) & 0x7FFFFFFF),
         'مهمة مستحقة الآن',
         task.title,
         tz.TZDateTime.from(notificationTime, tz.local),
@@ -176,8 +183,8 @@ class NotificationScheduler {
     if (!_isInitialized) return;
 
     try {
-      await _plugin.cancel(taskId.hashCode);
-      await _plugin.cancel(taskId.hashCode + 2000); // Cancel exact notification too
+      await _plugin.cancel(taskId.hashCode & 0x7FFFFFFF);
+      await _plugin.cancel((taskId.hashCode + 2000) & 0x7FFFFFFF); // Cancel exact notification too
       ErrorHandler.logSuccess('Notification cancelled for task: $taskId');
     } catch (e) {
       ErrorHandler.handleError(e, null, context: 'NotificationScheduler.cancelTaskNotification');
@@ -248,7 +255,7 @@ class NotificationScheduler {
       final snoozeTime = DateTime.now().add(const Duration(minutes: 15));
       
       await _plugin.zonedSchedule(
-        taskId.hashCode + 1000,
+        ((taskId.hashCode + 1000) & 0x7FFFFFFF),
         'تذكير مؤجل',
         'تم تأجيل هذا الإشعار لـ 15 دقيقة',
         tz.TZDateTime.from(snoozeTime, tz.local),

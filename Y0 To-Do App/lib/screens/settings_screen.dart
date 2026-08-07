@@ -1,3 +1,10 @@
+// Developed by:
+// - Arabic: م / يوسف محمود عبد الجواد
+// - English: Eng / Youssef Mahmoud Abdelgawad
+// - Business Website: https://y0ussef.com/
+// - Whatsapp: https://wa.me/201129334173
+// - Email: info@Y0ussef.com
+
 // ignore_for_file: use_build_context_synchronously, duplicate_ignore
 
 import 'package:flutter/material.dart';
@@ -8,10 +15,14 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/settings_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/ai_provider.dart';
+import '../services/backup_service.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/theme_mode_selector.dart';
 import '../widgets/voice_settings_panel.dart';
 import '../widgets/bottom_navigation.dart';
+import '../widgets/settings/language_selector.dart';
+import '../widgets/settings/notification_time_selector.dart';
+import '../widgets/settings/name_edit_dialog.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -243,7 +254,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           color: theme.colorScheme.primary,
                         ),
                         title: const Text('معلومات التطبيق'),
-                        subtitle: const Text('Y0 To-Do App v3.2.3'),
+                        subtitle: const Text('Y0 To-Do App v3.2.8'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showAppInfo(context),
                       ),
@@ -260,6 +271,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                 ).animate().slideX(begin: -0.1, duration: 300.ms).fadeIn(),
+                
+                const SizedBox(height: 16),
+                
+                // Backup Section
+                Card(
+                  child: Column(
+                    children: [
+                      const SettingsSection(
+                        title: 'النسخ الاحتياطي',
+                        icon: Icons.backup,
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          Icons.cloud_upload,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: const Text('إنشاء نسخة احتياطية'),
+                        subtitle: const Text('تصدير جميع بيانات التطبيق'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _handleBackup(context),
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          Icons.cloud_download,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: const Text('استعادة نسخة احتياطية'),
+                        subtitle: const Text('استيراد بيانات من نسخة احتياطية'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _handleRestore(context),
+                      ),
+                    ],
+                  ),
+                ).animate().slideX(begin: 0.1, duration: 300.ms).fadeIn(),
                 
                 const SizedBox(height: 32),
               ]),
@@ -339,58 +384,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'اختر اللغة',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              title: const Text('العربية'),
-              subtitle: const Text('قريباً'),
-              leading: Radio<String>(
-                value: 'ar',
-                // ignore: deprecated_member_use
-                groupValue: ref.read(settingsProvider).language,
-                // ignore: deprecated_member_use
-                onChanged: (value) {
-                  if (value != null) {
-                    ref.read(settingsProvider.notifier).updateLanguage(value);
-                    Navigator.pop(context);
-                    _showSnackBar(context, 'قريباً: دعم اللغة العربية');
-                  }
-                },
-              ),
-            ),
-            ListTile(
-              title: const Text('English'),
-              subtitle: const Text('Coming soon'),
-              leading: Radio<String>(
-                value: 'en',
-                // ignore: deprecated_member_use
-                groupValue: ref.read(settingsProvider).language,
-                // ignore: deprecated_member_use
-                onChanged: (value) {
-                  if (value != null) {
-                    ref.read(settingsProvider.notifier).updateLanguage(value);
-                    Navigator.pop(context);
-                    _showSnackBar(context, 'Coming soon: English support');
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+      builder: (context) => const LanguageSelector(),
     );
   }
 
   void _showAppInfo(BuildContext context) async {
     final packageInfo = await PackageInfo.fromPlatform();
+    if (!context.mounted) return;
     
     showAboutDialog(
       context: context,
@@ -427,41 +427,59 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showNameEditDialog(BuildContext context) {
-    final controller = TextEditingController(text: ref.read(settingsProvider).userName);
-    
+  void _handleBackup(BuildContext context) async {
+    try {
+      final backupService = BackupService();
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      
+      await backupService.exportAndShareBackup();
+      
+      if (context.mounted) {
+        Navigator.pop(context);
+        _showSnackBar(context, 'تم إنشاء النسخة الاحتياطية بنجاح');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        _showSnackBar(context, 'فشل إنشاء النسخة الاحتياطية: $e');
+      }
+    }
+  }
+
+  void _handleRestore(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تعديل اسم المستخدم'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'الاسم',
-            hintText: 'أدخل اسمك',
-            border: OutlineInputBorder(),
-          ),
-          textDirection: TextDirection.rtl,
-          autofocus: true,
-        ),
+        title: const Text('استعادة نسخة احتياطية'),
+        content: const Text('هل تريد استعادة نسخة احتياطية؟ سيتم استبدال جميع البيانات الحالية.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('إلغاء'),
           ),
           TextButton(
-            onPressed: () {
-              final name = controller.text.trim();
-              if (name.isNotEmpty) {
-                ref.read(settingsProvider.notifier).updateUserName(name);
-                Navigator.pop(context);
-                _showSnackBar(context, 'تم تحديث اسم المستخدم');
-              }
+            onPressed: () async {
+              Navigator.pop(context);
+              _showSnackBar(context, 'ميزة الاستعادة قيد التطوير');
             },
-            child: const Text('حفظ'),
+            child: const Text('تأكيد'),
           ),
         ],
       ),
+    );
+  }
+
+  void _showNameEditDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const NameEditDialog(),
     );
   }
 
@@ -492,48 +510,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showNotificationTimeSelector(BuildContext context) {
-    final currentTime = ref.read(settingsProvider).notificationMinutesBefore;
-    
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'اختر وقت التذكير',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 20),
-            ...[
-              {'minutes': 15, 'text': '15 دقيقة'},
-              {'minutes': 30, 'text': '30 دقيقة'},
-              {'minutes': 60, 'text': 'ساعة واحدة'},
-              {'minutes': 120, 'text': 'ساعتين'},
-              {'minutes': 1440, 'text': 'يوم واحد'},
-            ].map((option) => ListTile(
-              title: Text(option['text'] as String),
-              leading: Radio<int>(
-                value: option['minutes'] as int,
-                // ignore: deprecated_member_use
-                groupValue: currentTime,
-                // ignore: deprecated_member_use
-                onChanged: (value) {
-                  if (value != null) {
-                    ref.read(settingsProvider.notifier).updateNotificationMinutesBefore(value);
-                    Navigator.pop(context);
-                    _showSnackBar(context, 'تم تحديث وقت التذكير');
-                  }
-                },
-              ),
-            )),
-          ],
-        ),
-      ),
+      builder: (context) => const NotificationTimeSelector(),
     );
   }
 }

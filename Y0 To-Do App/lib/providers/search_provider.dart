@@ -1,3 +1,10 @@
+// Developed by:
+// - Arabic: م / يوسف محمود عبد الجواد
+// - English: Eng / Youssef Mahmoud Abdelgawad
+// - Business Website: https://y0ussef.com/
+// - Whatsapp: https://wa.me/201129334173
+// - Email: info@Y0ussef.com
+
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
@@ -224,14 +231,6 @@ final searchProvider = StateNotifierProvider<SearchNotifier, SearchState>((ref) 
 final searchResultsProvider = Provider<List<Task>>((ref) {
   final searchState = ref.watch(searchProvider);
   final filteredTasks = ref.watch(filteredTasksProvider);
-  
-  // Reset pagination when search is cleared (query becomes empty)
-  ref.listen(searchProvider, (previous, next) {
-    if ((previous?.query.isNotEmpty ?? false) && next.query.isEmpty) {
-      // Search was cleared, reset pagination
-      ref.read(currentPageProvider.notifier).state = 1;
-    }
-  });
   
   if (searchState.query.isNotEmpty) {
     return searchState.searchResults;

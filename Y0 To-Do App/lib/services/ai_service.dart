@@ -1,3 +1,10 @@
+// Developed by:
+// - Arabic: م / يوسف محمود عبد الجواد
+// - English: Eng / Youssef Mahmoud Abdelgawad
+// - Business Website: https://y0ussef.com/
+// - Whatsapp: https://wa.me/201129334173
+// - Email: info@Y0ussef.com
+
 import 'dart:math';
 import '../models/task.dart';
 import '../models/task_category.dart';
@@ -315,9 +322,10 @@ class AIService {
     
     // حساب نقاط الإنتاجية
     final totalTasks = completedTasks.length;
+    final now = DateTime.now();
     final completedToday = completedTasks.where((task) {
       final date = DateTime.parse(task['completedAt']);
-      return date.day == DateTime.now().day;
+      return date.year == now.year && date.month == now.month && date.day == now.day;
     }).length;
     
     analysis.score = ((completedToday / max(totalTasks * 0.1, 1)) * 100).clamp(0, 100).round();
@@ -479,7 +487,7 @@ class AIService {
       double score = 0.0;
       
       // درجة الأولوية (0-40 نقطة)
-      score += (2 - task.priority) * 20; // عالية الأولوية = 40، متوسطة = 20، منخفضة = 0
+      score += task.priority * 20; // عالية الأولوية = 40، متوسطة = 20، منخفضة = 0
       
       // درجة التاريخ (0-30 نقطة)
       if (task.dueDate != null) {
