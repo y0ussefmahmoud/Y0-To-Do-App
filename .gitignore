@@ -1,4 +1,4 @@
-.gitignore
+
 
 Y0 To-Do App/build
 
@@ -16,4 +16,5 @@ android/.kotlin/
 # Output builds
 
 *.aab
+*.apk
 .build/app/outputs
