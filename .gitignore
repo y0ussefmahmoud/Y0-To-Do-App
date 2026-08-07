@@ -1,3 +1,19 @@
 .gitignore
 
 Y0 To-Do App/build
+
+# Flutter & Dart artifacts
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+
+# Kotlin / Android error logs
+android/.kotlin/
+
+# Output builds
+
+*.aab
+.build/app/outputs
