@@ -6,6 +6,7 @@
 // - Email: info@Y0ussef.com
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// Manually maintained for compatibility. Re-run build_runner if adding more fields.
 
 part of 'task.dart';
 
@@ -24,20 +25,22 @@ class TaskAdapter extends TypeAdapter<Task> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Task(
-      id: fields[0] as String,
-      title: fields[1] as String,
+      id: fields[0] as String? ?? '',
+      title: fields[1] as String? ?? '',
       note: fields[2] as String?,
       dueDate: fields[3] as DateTime?,
-      priority: fields[4] as int,
-      isDone: fields[5] as bool,
+      priority: fields[4] as int? ?? 0,
+      isDone: fields[5] as bool? ?? false,
       category: fields[6] as TaskCategory?,
+      // Field 7: sortOrder — strict safe default 0 for existing records that lack this field
+      sortOrder: fields[7] as int? ?? 0,
     );
   }
 
   @override
   void write(BinaryWriter writer, Task obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -51,7 +54,9 @@ class TaskAdapter extends TypeAdapter<Task> {
       ..writeByte(5)
       ..write(obj.isDone)
       ..writeByte(6)
-      ..write(obj.category);
+      ..write(obj.category)
+      ..writeByte(7)
+      ..write(obj.sortOrder);
   }
 
   @override

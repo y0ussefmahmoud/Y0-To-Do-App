@@ -42,6 +42,7 @@ final taskRepositoryProvider = Provider<TaskRepository>((ref) {
 /// - تحديث مهمة موجودة
 /// - حذف مهمة
 /// - تبديل حالة إنجاز المهمة
+/// - إعادة ترتيب المهام (drag-and-drop)
 /// 
 /// يستخدم Repository Pattern للتفاعل مع قاعدة البيانات
 /// يدمج مع نظام الإشعارات لجدولة تذكيرات المهام
@@ -80,19 +81,24 @@ class TasksNotifier extends StateNotifier<List<Task>> {
   /// إذا كانت الإشعارات مفعلة، يتم جدولة إشعار للمهمة
   Future<void> addTask(Task task) async {
     try {
-      await _repo.add(task);
-      state = [...state, task];
+      // تعيين sortOrder بناءً على عدد المهام الحالية
+      final currentTasks = _repo.getAll();
+      final activePending = currentTasks.where((t) => !t.isArchived).toList();
+      final taskWithOrder = task.copyWith(sortOrder: activePending.length);
+
+      await _repo.add(taskWithOrder);
+      state = [...state, taskWithOrder];
       
       // جدولة إشعار للمهمة إذا كان لها تاريخ استحقاق
       if (task.dueDate != null) {
         final settings = _ref.read(settingsProvider);
         if (settings.notificationsEnabled) {
           final notificationService = _ref.read(notificationServiceProvider);
-          await notificationService.scheduleTaskNotification(task, settings.notificationMinutesBefore);
+          await notificationService.scheduleTaskNotification(taskWithOrder, settings.notificationMinutesBefore);
           
           // جدولة إشعار دقيق الوقت إذا كان مفعلاً
           if (settings.exactTimeNotificationsEnabled) {
-            await notificationService.scheduleExactTimeNotification(task);
+            await notificationService.scheduleExactTimeNotification(taskWithOrder);
           }
         }
       }
@@ -222,6 +228,58 @@ class TasksNotifier extends StateNotifier<List<Task>> {
     }
   }
 
+  /// إعادة ترتيب المهام (Drag-and-Drop)
+  /// 
+  /// [oldIndex] الفهرس القديم للمهمة في القائمة النشطة
+  /// [newIndex] الفهرس الجديد للمهمة في القائمة النشطة
+  /// 
+  /// يحدّث sortOrder لجميع المهام المتأثرة ويكتب التغييرات إلى Hive
+  Future<void> reorderTasks(int oldIndex, int newIndex) async {
+    try {
+      // الحصول على المهام النشطة المرتبة (نفس ما يُعرَض في الواجهة)
+      final activeTasks = state
+          .where((t) => !t.isArchived)
+          .toList()
+        ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+      if (oldIndex < 0 ||
+          newIndex < 0 ||
+          oldIndex >= activeTasks.length ||
+          newIndex > activeTasks.length) {
+        return;
+      }
+
+      // ReorderableListView يمرر newIndex بعد الإزالة — تصحيح المؤشر
+      final adjustedNewIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
+
+      // إعادة الترتيب في القائمة
+      final reordered = List<Task>.from(activeTasks);
+      final moved = reordered.removeAt(oldIndex);
+      reordered.insert(adjustedNewIndex, moved);
+
+      // تعيين sortOrder جديد بناءً على الترتيب
+      final updatedActive = <Task>[];
+      for (int i = 0; i < reordered.length; i++) {
+        updatedActive.add(reordered[i].copyWith(sortOrder: i));
+      }
+
+      // تحديث الحالة فوراً (optimistic update)
+      final archived = state.where((t) => t.isArchived).toList();
+      state = [...updatedActive, ...archived];
+
+      // كتابة التغييرات إلى Hive بصورة غير متزامنة (batch write)
+      for (final task in updatedActive) {
+        await _repo.update(task);
+      }
+
+      ErrorHandler.logSuccess('Tasks reordered successfully');
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, context: 'TasksNotifier.reorderTasks');
+      // إعادة الحالة من قاعدة البيانات عند حدوث خطأ
+      await refresh();
+    }
+  }
+
   /// فلترة المهام حسب المعايير المحددة
   /// 
   /// [filter] معايير الفلترة
@@ -234,10 +292,13 @@ class TasksNotifier extends StateNotifier<List<Task>> {
     if (filter.status != null) {
       switch (filter.status!) {
         case TaskStatus.pending:
-          tasks = tasks.where((task) => !task.isDone).toList();
+          tasks = tasks.where((task) => !task.isDone && !task.isArchived).toList();
           break;
         case TaskStatus.completed:
           tasks = tasks.where((task) => task.isDone).toList();
+          break;
+        case TaskStatus.archived:
+          tasks = tasks.where((task) => task.isArchived).toList();
           break;
         case TaskStatus.all:
           break;
@@ -379,6 +440,44 @@ final tasksProvider = StateNotifierProvider<TasksNotifier, List<Task>>((ref) {
   return TasksNotifier(repo, ref);
 });
 
+/// Provider للمهام النشطة (غير مؤرشفة)
+/// 
+/// يُظهر فقط المهام غير المكتملة وغير المؤرشفة (!isDone && !isArchived)
+/// مرتبة حسب sortOrder أولاً ثم الأولوية
+final activePendingTasksProvider = Provider<List<Task>>((ref) {
+  final tasks = ref.watch(tasksProvider);
+  return tasks
+      .where((t) => !t.isDone && !t.isArchived)
+      .toList()
+    ..sort((a, b) {
+      // الترتيب الأساسي: sortOrder تصاعدي
+      final orderCmp = a.sortOrder.compareTo(b.sortOrder);
+      if (orderCmp != 0) return orderCmp;
+      // الترتيب الثانوي: الأولوية تنازلي (الأعلى أولاً)
+      return b.priority.compareTo(a.priority);
+    });
+});
+
+/// Provider للمهام المؤرشفة
+/// 
+/// يُظهر المهام المكتملة والمهام التي تجاوزت 30 يوماً من تاريخ استحقاقها
+/// مرتبة حسب تاريخ الاستحقاق (الأحدث أولاً)
+final archivedTasksProvider = Provider<List<Task>>((ref) {
+  final tasks = ref.watch(tasksProvider);
+  final archived = tasks.where((t) => t.isArchived).toList();
+  archived.sort((a, b) {
+    // المهام المكتملة قبل المؤرشفة بالتاريخ
+    if (a.isDone && !b.isDone) return -1;
+    if (!a.isDone && b.isDone) return 1;
+    // ثم حسب تاريخ الاستحقاق (الأحدث أولاً)
+    if (a.dueDate != null && b.dueDate != null) {
+      return b.dueDate!.compareTo(a.dueDate!);
+    }
+    return 0;
+  });
+  return archived;
+});
+
 /// Provider لفلترة المهام
 /// 
 /// يحتفظ بحالة الفلترة الحالية
@@ -388,13 +487,14 @@ final taskFilterProvider = StateProvider<TaskFilter>((ref) {
 
 /// Provider للمهام المفلترة
 /// 
-/// يجمع بين قائمة المهام الأصلية والفلاتر المطبقة
+/// يجمع بين قائمة المهام الأصلية والفلاتر المطبقة.
+/// عند عدم وجود فلتر نشط، يُعرض فقط المهام النشطة غير المؤرشفة.
 final filteredTasksProvider = Provider<List<Task>>((ref) {
-  final tasks = ref.watch(tasksProvider);
   final filter = ref.watch(taskFilterProvider);
   
   if (!filter.isActive) {
-    return tasks;
+    // الوضع الافتراضي: عرض المهام النشطة فقط مرتبةً حسب sortOrder
+    return ref.watch(activePendingTasksProvider);
   }
   
   final tasksNotifier = ref.read(tasksProvider.notifier);
@@ -464,6 +564,11 @@ class TaskCounts {
   final int archivedOlderThanMonth;
   final int activePending;
   final int today;
+  final int todayTotal;
+  final int todayCompleted;
+  final int todayPending;
+  final double todayProgress;
+  final int todayProgressPercent;
   final int thisWeek;
   final int overdue;
   final int priorityHigh;
@@ -478,6 +583,11 @@ class TaskCounts {
     required this.archivedOlderThanMonth,
     required this.activePending,
     required this.today,
+    required this.todayTotal,
+    required this.todayCompleted,
+    required this.todayPending,
+    required this.todayProgress,
+    required this.todayProgressPercent,
     required this.thisWeek,
     required this.overdue,
     required this.priorityHigh,
@@ -488,15 +598,27 @@ class TaskCounts {
 }
 
 /// Provider لحساب أعداد المهام وتخزينها مؤقتاً (Memoized)
+/// 
+/// الإحصائيات الدقيقة:
+/// - completed: فقط المهام ذات isDone == true
+/// - pending: المهام النشطة !isDone && !isArchived
+/// - archived: جميع المهام المؤرشفة (مكتملة + تجاوزت 30 يوم)
+/// - todayTotal: إجمالي المهام المجدولة لليوم (مكتملة + معلقة)
+/// - todayCompleted: المهام المجدولة لليوم وتم إنجازها
+/// - todayPending: المهام المجدولة لليوم وقيد التنفيذ
+/// - todayProgress: نسبة إنجاز اليوم (0.0 إلى 1.0)
 final taskCountsProvider = Provider<TaskCounts>((ref) {
   final tasks = ref.watch(tasksProvider);
   
-  int completed = 0;
-  int pending = 0;
-  int archived = 0;
-  int archivedOlderThanMonth = 0;
+  int completed = 0;    // isDone == true فقط
+  int pending = 0;      // !isDone && !isArchived (نشط)
+  int archived = 0;     // isArchived (مكتمل أو تجاوز 30 يوم)
+  int archivedOlderThanMonth = 0; // مؤرشف بسبب التاريخ (ليس بالإنجاز)
   int activePending = 0;
   int today = 0;
+  int todayTotal = 0;
+  int todayCompleted = 0;
+  int todayPending = 0;
   int thisWeek = 0;
   int overdue = 0;
   int priorityHigh = 0;
@@ -509,31 +631,44 @@ final taskCountsProvider = Provider<TaskCounts>((ref) {
   }
   
   final now = DateTime.now();
-  final monthAgo = now.subtract(const Duration(days: 30));
   final todayDate = DateTime(now.year, now.month, now.day);
   final weekStart = todayDate.subtract(Duration(days: todayDate.weekday - 1));
   final weekEnd = weekStart.add(const Duration(days: 6));
   
   for (final task in tasks) {
-    final isOlderThanMonth = task.dueDate != null && task.dueDate!.isBefore(monthAgo);
-    final isTaskArchived = task.isArchived;
-
-    if (isTaskArchived) {
+    // --- تصنيف المهمة: مكتملة / نشطة / مؤرشفة بالتاريخ ---
+    if (task.isDone) {
+      // مكتملة — تُحسب كمكتملة وكمؤرشفة
+      completed++;
       archived++;
-      if (isOlderThanMonth && !task.isDone) {
-        archivedOlderThanMonth++;
-      }
     } else {
-      activePending++;
+      // غير مكتملة — تحقق من التأريخ التلقائي
+      if (task.isArchived) {
+        // مؤرشفة بسبب التاريخ (ليس بالإنجاز)
+        archived++;
+        archivedOlderThanMonth++;
+      } else {
+        // نشطة قيد التنفيذ
+        pending++;
+        activePending++;
+      }
     }
 
-    if (task.isDone) {
-      completed++;
-    } else {
-      pending++;
+    // --- حساب إحصائيات مهام اليوم (Today's Tasks) بدقة ---
+    if (task.dueDate != null) {
+      final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+      if (taskDate.isAtSameMomentAs(todayDate)) {
+        todayTotal++;
+        if (task.isDone) {
+          todayCompleted++;
+        } else if (!task.isArchived) {
+          todayPending++;
+        }
+      }
     }
     
-    if (task.dueDate != null) {
+    // --- إحصائيات الفلترة التاريخية (للمهام النشطة) ---
+    if (task.dueDate != null && !task.isArchived) {
       final taskDate = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
       if (taskDate.isAtSameMomentAs(todayDate)) {
         today++;
@@ -546,6 +681,7 @@ final taskCountsProvider = Provider<TaskCounts>((ref) {
       }
     }
     
+    // --- إحصائيات الأولوية ---
     switch (task.priority) {
       case 2:
         priorityHigh++;
@@ -557,11 +693,15 @@ final taskCountsProvider = Provider<TaskCounts>((ref) {
       default:
         priorityLow++;
         break;
-    }
+      }
     
+    // --- إحصائيات التصنيف ---
     final cat = task.safeCategory;
     categoryCounts[cat] = (categoryCounts[cat] ?? 0) + 1;
   }
+
+  final todayProgress = todayTotal > 0 ? todayCompleted / todayTotal : 0.0;
+  final todayProgressPercent = (todayProgress * 100).round();
   
   return TaskCounts(
     completed: completed,
@@ -570,6 +710,11 @@ final taskCountsProvider = Provider<TaskCounts>((ref) {
     archivedOlderThanMonth: archivedOlderThanMonth,
     activePending: activePending,
     today: today,
+    todayTotal: todayTotal,
+    todayCompleted: todayCompleted,
+    todayPending: todayPending,
+    todayProgress: todayProgress,
+    todayProgressPercent: todayProgressPercent,
     thisWeek: thisWeek,
     overdue: overdue,
     priorityHigh: priorityHigh,
@@ -578,4 +723,3 @@ final taskCountsProvider = Provider<TaskCounts>((ref) {
     categoryCounts: categoryCounts,
   );
 });
-

@@ -6,6 +6,7 @@
 // - Email: info@Y0ussef.com
 
 import 'package:flutter/material.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../theme/y0_design_system.dart';
 import '../../widgets/neo_morphic_card.dart';
 import '../../models/task.dart';
@@ -23,17 +24,15 @@ class ArchiveSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final completedCount = tasks.where((t) => t.isDone).length;
-    final monthAgo = DateTime.now().subtract(const Duration(days: 30));
-    final olderThanMonthCount = tasks.where((t) => !t.isDone && t.dueDate != null && t.dueDate!.isBefore(monthAgo)).length;
+    final olderThanMonthCount = tasks.where((t) => !t.isDone && t.isArchived).length;
     final activeCount = tasks.where((t) => !t.isArchived).length;
 
     return NeoMorphicCard(
       padding: const EdgeInsets.all(Y0DesignSystem.spacing4),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               NeoMorphicCard(
                 padding: const EdgeInsets.all(Y0DesignSystem.spacing2),
@@ -50,8 +49,7 @@ class ArchiveSummaryCard extends StatelessWidget {
               const SizedBox(width: Y0DesignSystem.spacing2),
               Expanded(
                 child: Text(
-                  'أرشيف المهام والتنظيف التلقائي',
-                  textAlign: TextAlign.end,
+                  context.l10n.archiveSummaryTitle,
                   style: context.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : context.colorScheme.onSurface,
@@ -61,20 +59,12 @@ class ArchiveSummaryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: Y0DesignSystem.spacing3),
-          Text(
-            'تنتقل المهام المكتملة أو التي يمر على موعدها أكثر من 30 يوماً تلقائياً إلى الأرشيف الحفظي.',
-            style: context.textTheme.bodyMedium?.copyWith(
-              color: isDark ? const Color(0xFFB3B3B3) : context.colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.end,
-          ),
-          const SizedBox(height: Y0DesignSystem.spacing4),
           Row(
             children: [
               Expanded(
                 child: _buildBadgeItem(
                   context,
-                  'مهام نشطة',
+                  context.l10n.filterPending,
                   '$activeCount',
                   Icons.play_circle_outline,
                   isDark ? Colors.green.shade400 : Colors.green,
@@ -84,7 +74,7 @@ class ArchiveSummaryCard extends StatelessWidget {
               Expanded(
                 child: _buildBadgeItem(
                   context,
-                  'قديمة (>30 يوم)',
+                  context.l10n.archiveSummaryOverdueOnly,
                   '$olderThanMonthCount',
                   Icons.history,
                   isDark ? Colors.orange.shade400 : Colors.orange,
@@ -94,7 +84,7 @@ class ArchiveSummaryCard extends StatelessWidget {
               Expanded(
                 child: _buildBadgeItem(
                   context,
-                  'مكتملة',
+                  context.l10n.filterCompleted,
                   '$completedCount',
                   Icons.check_circle_outline,
                   isDark ? Colors.blue.shade400 : Colors.blue,

@@ -6,6 +6,7 @@
 // - Email: info@Y0ussef.com
 
 import 'package:flutter/material.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../theme/y0_design_system.dart';
 import '../../widgets/neo_morphic_card.dart';
 
@@ -73,42 +74,16 @@ class AchievementBadges extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            TextButton(
-              onPressed: () {},
-              child: Row(
-                textDirection: TextDirection.rtl,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'عرض الكل',
-                    style: TextStyle(
-                      color: isDark ? const Color(0xFF66bb6a) : context.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.chevron_left,
-                    color: isDark ? const Color(0xFF66bb6a) : context.colorScheme.primary,
-                    size: 20,
-                  ),
-                ],
-              ),
-            ),
-            Flexible(
-              child: Text(
-                'أوسمة الإنجاز',
-                textAlign: TextAlign.end,
-                overflow: TextOverflow.ellipsis,
-                style: context.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : context.colorScheme.onSurface,
-                ),
+            Text(
+              context.l10n.achievementBadgesTitle,
+              style: context.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : context.colorScheme.onSurface,
               ),
             ),
           ],
@@ -117,35 +92,27 @@ class AchievementBadges extends StatelessWidget {
         Wrap(
           spacing: Y0DesignSystem.spacing3,
           runSpacing: Y0DesignSystem.spacing3,
-          alignment: WrapAlignment.end,
           children: [
             _buildAchievementBadge(
               context,
-              'البداية القوية',
+              context.l10n.badgeFirstTask,
               Icons.star,
               isDark ? Colors.yellow : Colors.amber,
               completedTasks >= 1,
             ),
             _buildAchievementBadge(
               context,
-              'قناص المهام',
+              context.l10n.badgeFiveTasks,
               Icons.workspace_premium,
               isDark ? Colors.blue.shade400 : Colors.blue,
-              completedTasks >= 10,
+              completedTasks >= 5,
             ),
             _buildAchievementBadge(
               context,
-              'بطل الإنجاز',
+              context.l10n.badgeTenTasks,
               Icons.emoji_events,
               isDark ? Colors.green.shade400 : Colors.green,
-              completedTasks >= 50,
-            ),
-            _buildAchievementBadge(
-              context,
-              'الأسطورة',
-              Icons.workspace_premium,
-              isDark ? Colors.purple.shade400 : Colors.purple,
-              completedTasks >= 100,
+              completedTasks >= 10,
             ),
           ],
         ),

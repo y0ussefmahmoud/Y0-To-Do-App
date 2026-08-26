@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../l10n/l10n_extension.dart';
 import '../providers/settings_provider.dart';
 import '../providers/task_provider.dart';
 import '../providers/ai_provider.dart';
@@ -48,8 +49,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Card(
                   child: Column(
                     children: [
-                      const SettingsSection(
-                        title: 'المظهر',
+                      SettingsSection(
+                        title: context.l10n.appearanceSection,
                         icon: Icons.palette,
                       ),
                       ListTile(
@@ -57,8 +58,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           _getThemeModeIcon(settings.themeMode),
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text('وضع الثيم'),
-                        subtitle: Text(_getThemeModeText(settings.themeMode)),
+                        title: Text(context.l10n.themeModeLabel),
+                        subtitle: Text(_getThemeModeText(context, settings.themeMode)),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showThemeModeSelector(context),
                       ),
@@ -72,8 +73,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Card(
                   child: Column(
                     children: [
-                      const SettingsSection(
-                        title: 'اللغة',
+                      SettingsSection(
+                        title: context.l10n.languageSection,
                         icon: Icons.language,
                       ),
                       ListTile(
@@ -81,8 +82,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Icons.translate,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text('لغة التطبيق'),
-                        subtitle: Text(settings.language == 'ar' ? 'العربية' : 'English'),
+                        title: Text(context.l10n.languageLabel),
+                        subtitle: Text(settings.language == 'ar' ? context.l10n.languageArabic : context.l10n.languageEnglish),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showLanguageSelector(context),
                       ),
@@ -96,8 +97,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Card(
                   child: Column(
                     children: [
-                      const SettingsSection(
-                        title: 'الإشعارات',
+                      SettingsSection(
+                        title: context.l10n.notificationsSection,
                         icon: Icons.notifications,
                       ),
                       SwitchListTile(
@@ -107,27 +108,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               : Icons.notifications_off,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text('تفعيل الإشعارات'),
-                        subtitle: const Text('استلام إشعارات للمهام والمواعيد'),
+                        title: Text(context.l10n.enableNotifications),
+                        subtitle: Text(context.l10n.enableNotificationsSubtitle),
                         value: settings.notificationsEnabled,
                         onChanged: (value) async {
                           HapticFeedback.lightImpact();
                           
-                          // تحديث الإعدادات
                           await ref.read(settingsProvider.notifier).toggleNotifications(value);
                           
-                          // التعامل مع الإشعارات
                           if (value) {
-                            // تفعيل الإشعارات: إعادة جدولة جميع الإشعارات
                             await ref.read(tasksProvider.notifier).rescheduleAllNotifications();
-                            // ignore: use_build_context_synchronously
-                            _showSnackBar(context, 'تم تفعيل الإشعارات وجدولة التذكيرات');
+                            _showSnackBar(context, context.l10n.notificationsEnabledSnackBar);
                           } else {
-                            // تعطيل الإشعارات: إلغاء جميع الإشعارات
                             final notificationService = ref.read(notificationServiceProvider);
                             await notificationService.cancelAllNotifications();
-                            // ignore: use_build_context_synchronously
-                            _showSnackBar(context, 'تم تعطيل الإشعارات');
+                            _showSnackBar(context, context.l10n.notificationsDisabledSnackBar);
                           }
                         },
                       ),
@@ -136,8 +131,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Icons.schedule,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text('وقت التذكير'),
-                        subtitle: Text('قبل موعد المهمة بـ ${_getNotificationTimeText(settings.notificationMinutesBefore)}'),
+                        title: Text(context.l10n.reminderTimeLabel),
+                        subtitle: Text(context.l10n.reminderTimeSubtitle(_getNotificationTimeText(context, settings.notificationMinutesBefore))),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showNotificationTimeSelector(context),
                       ),
@@ -148,26 +143,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               : Icons.access_time_outlined,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text('إشعارات دقيقة الوقت'),
-                        subtitle: const Text('إشعار إضافي يظهر في الوقت المحدد تماماً'),
+                        title: Text(context.l10n.exactTimeNotifications),
+                        subtitle: Text(context.l10n.exactTimeNotificationsSubtitle),
                         value: settings.exactTimeNotificationsEnabled,
                         onChanged: (value) async {
                           HapticFeedback.lightImpact();
                           
-                          // تحديث الإعدادات
                           await ref.read(settingsProvider.notifier).toggleExactTimeNotifications(value);
                           
-                          // التعامل مع الإشعارات
                           if (value) {
-                            // تفعيل الإشعارات الدقيقة: إعادة جدولة جميع الإشعارات
                             await ref.read(tasksProvider.notifier).rescheduleAllNotifications();
-                            // ignore: use_build_context_synchronously
-                            _showSnackBar(context, 'تم تفعيل الإشعارات الدقيقة');
+                            _showSnackBar(context, context.l10n.exactTimeNotificationsEnabledSnackBar);
                           } else {
-                            // تعطيل الإشعارات الدقيقة: إلغاء الإشعارات الدقيقة فقط
                             await ref.read(tasksProvider.notifier).rescheduleAllNotifications();
-                            // ignore: use_build_context_synchronously
-                            _showSnackBar(context, 'تم تعطيل الإشعارات الدقيقة');
+                            _showSnackBar(context, context.l10n.exactTimeNotificationsDisabledSnackBar);
                           }
                         },
                       ),
@@ -176,14 +165,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Icons.notifications_active_outlined,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text('اختبار الإشعارات'),
-                        subtitle: const Text('إرسال إشعار تجريبي'),
+                        title: Text(context.l10n.testNotification),
+                        subtitle: Text(context.l10n.testNotificationSubtitle),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () async {
                           final notificationService = ref.read(notificationServiceProvider);
-                          await notificationService.showInstantNotification('اختبار', 'هذا إشعار تجريبي');
-                          // ignore: use_build_context_synchronously
-                          _showSnackBar(context, 'تم إرسال الإشعار التجريبي');
+                          await notificationService.showInstantNotification(
+                            context.l10n.testNotificationTitle,
+                            context.l10n.testNotificationBody,
+                          );
+                          _showSnackBar(context, context.l10n.testNotificationSent);
                         },
                       ),
                     ],
@@ -210,7 +201,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onSoundToggle: (value) {
                     HapticFeedback.lightImpact();
                     ref.read(settingsProvider.notifier).toggleSound(value);
-                    _showSnackBar(context, 'تم تحديث إعدادات الصوت');
+                    _showSnackBar(context, context.l10n.soundSettingsUpdated);
                   },
                 ).animate().slideX(begin: 0.1, duration: 300.ms).fadeIn(),
                 
@@ -220,8 +211,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Card(
                   child: Column(
                     children: [
-                      const SettingsSection(
-                        title: 'الملف الشخصي',
+                      SettingsSection(
+                        title: context.l10n.profileSection,
                         icon: Icons.person,
                       ),
                       ListTile(
@@ -229,7 +220,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Icons.person_outline,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text('اسم المستخدم'),
+                        title: Text(context.l10n.userNameLabel),
                         subtitle: Text(settings.userName),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showNameEditDialog(context),
@@ -240,12 +231,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 
                 const SizedBox(height: 16),
                 
-                // About Section
+                // Security Section — App Lock
                 Card(
                   child: Column(
                     children: [
-                      const SettingsSection(
-                        title: 'حول التطبيق',
+                      SettingsSection(
+                        title: context.l10n.securitySection,
+                        icon: Icons.security,
+                      ),
+                      SwitchListTile(
+                        secondary: Icon(
+                          settings.appLockEnabled
+                              ? Icons.lock
+                              : Icons.lock_open,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: Text(context.l10n.appLockLabel),
+                        subtitle: Text(context.l10n.appLockSubtitle),
+                        value: settings.appLockEnabled,
+                        onChanged: (value) async {
+                          HapticFeedback.lightImpact();
+                          await ref
+                              .read(settingsProvider.notifier)
+                              .toggleAppLock(value);
+                          _showSnackBar(
+                            context,
+                            value
+                                ? context.l10n.appLockEnabledSnackBar
+                                : context.l10n.appLockDisabledSnackBar,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ).animate().slideX(begin: 0.1, duration: 300.ms).fadeIn(),
+                
+                const SizedBox(height: 16),
+                
+                Card(
+                  child: Column(
+                    children: [
+                      SettingsSection(
+                        title: context.l10n.aboutSection,
                         icon: Icons.info,
                       ),
                       ListTile(
@@ -253,8 +280,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Icons.info_outline,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text('معلومات التطبيق'),
-                        subtitle: const Text('Y0 To-Do App v3.2.8'),
+                        title: Text(context.l10n.aboutAppLabel),
+                        subtitle: Text(context.l10n.aboutAppSubtitle),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showAppInfo(context),
                       ),
@@ -263,8 +290,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Icons.restore,
                           color: Colors.orange,
                         ),
-                        title: const Text('إعادة تعيين الإعدادات'),
-                        subtitle: const Text('استعادة جميع الإعدادات الافتراضية'),
+                        title: Text(context.l10n.resetSettingsLabel),
+                        subtitle: Text(context.l10n.resetSettingsSubtitle),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showResetConfirmation(context),
                       ),
@@ -278,8 +305,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Card(
                   child: Column(
                     children: [
-                      const SettingsSection(
-                        title: 'النسخ الاحتياطي',
+                      SettingsSection(
+                        title: context.l10n.backupSection,
                         icon: Icons.backup,
                       ),
                       ListTile(
@@ -287,8 +314,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Icons.cloud_upload,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text('إنشاء نسخة احتياطية'),
-                        subtitle: const Text('تصدير جميع بيانات التطبيق'),
+                        title: Text(context.l10n.createBackupLabel),
+                        subtitle: Text(context.l10n.createBackupSubtitle),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _handleBackup(context),
                       ),
@@ -297,8 +324,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Icons.cloud_download,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text('استعادة نسخة احتياطية'),
-                        subtitle: const Text('استيراد بيانات من نسخة احتياطية'),
+                        title: Text(context.l10n.restoreBackupLabel),
+                        subtitle: Text(context.l10n.restoreBackupSubtitle),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _handleRestore(context),
                       ),
@@ -324,15 +351,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _handleNavigationTap(BuildContext context, int index) {
     switch (index) {
       case 0:
-        // Home Screen
         Navigator.pushReplacementNamed(context, '/');
         break;
       case 1:
-        // Statistics Screen
         Navigator.pushReplacementNamed(context, '/statistics');
         break;
       case 2:
-        // Settings Screen (we're already here)
         break;
     }
   }
@@ -349,15 +373,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  String _getThemeModeText(String themeMode) {
+  String _getThemeModeText(BuildContext context, String themeMode) {
     switch (themeMode) {
       case 'light':
-        return 'الوضع الفاتح';
+        return context.l10n.themeLight;
       case 'dark':
-        return 'الوضع الداكن';
+        return context.l10n.themeDark;
       case 'system':
       default:
-        return 'تلقائي (حسب النظام)';
+        return context.l10n.themeSystem;
     }
   }
 
@@ -372,7 +396,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         onThemeModeChanged: (mode) {
           ref.read(settingsProvider.notifier).updateThemeMode(mode);
           Navigator.pop(context);
-          _showSnackBar(context, 'تم تغيير وضع الثيم');
+          _showSnackBar(context, context.l10n.themeChanged);
         },
       ),
     );
@@ -394,11 +418,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     
     showAboutDialog(
       context: context,
-      applicationName: 'Y0 To-Do App',
-      applicationVersion: packageInfo.version,
+      applicationName: context.l10n.appTitle,
+      applicationVersion: packageInfo.version.isEmpty ? '3.3.0' : packageInfo.version,
       applicationIcon: const Icon(Icons.task_alt, size: 48),
       children: [
-        const Text('تطبيق مهام احترافي مع واجهة عربية كاملة ومميزات متقدمة.'),
+        Text(context.l10n.aboutAppDescription),
       ],
     );
   }
@@ -407,20 +431,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('إعادة تعيين الإعدادات'),
-        content: const Text('هل أنت متأكد من إعادة تعيين جميع الإعدادات إلى القيم الافتراضية؟'),
+        title: Text(context.l10n.resetConfirmTitle),
+        content: Text(context.l10n.resetConfirmMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               ref.read(settingsProvider.notifier).resetToDefaults();
               Navigator.pop(context);
-              _showSnackBar(context, 'تم إعادة تعيين جميع الإعدادات');
+              _showSnackBar(context, context.l10n.settingsResetSnackBar);
             },
-            child: const Text('تأكيد'),
+            child: Text(context.l10n.confirm),
           ),
         ],
       ),
@@ -443,12 +467,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       
       if (context.mounted) {
         Navigator.pop(context);
-        _showSnackBar(context, 'تم إنشاء النسخة الاحتياطية بنجاح');
+        _showSnackBar(context, context.l10n.backupSuccessSnackBar);
       }
     } catch (e) {
       if (context.mounted) {
         Navigator.pop(context);
-        _showSnackBar(context, 'فشل إنشاء النسخة الاحتياطية: $e');
+        _showSnackBar(context, context.l10n.backupFailedSnackBar(e.toString()));
       }
     }
   }
@@ -457,19 +481,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('استعادة نسخة احتياطية'),
-        content: const Text('هل تريد استعادة نسخة احتياطية؟ سيتم استبدال جميع البيانات الحالية.'),
+        title: Text(context.l10n.restoreConfirmTitle),
+        content: Text(context.l10n.restoreConfirmMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              _showSnackBar(context, 'ميزة الاستعادة قيد التطوير');
+              _showSnackBar(context, context.l10n.restoreFeatureComingSoon);
             },
-            child: const Text('تأكيد'),
+            child: Text(context.l10n.confirm),
           ),
         ],
       ),
@@ -495,17 +519,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  String _getNotificationTimeText(int minutes) {
+  String _getNotificationTimeText(BuildContext context, int minutes) {
     if (minutes < 60) {
-      return '$minutes دقيقة';
+      return context.l10n.minutesFormat(minutes);
     } else if (minutes == 60) {
-      return 'ساعة واحدة';
+      return context.l10n.oneHour;
     } else if (minutes < 1440) {
-      final hours = minutes ~/ 60;
-      return '$hours ساعات';
+      return context.l10n.hoursFormat(minutes ~/ 60);
     } else {
-      final days = minutes ~/ 1440;
-      return '$days يوم';
+      return context.l10n.oneDay;
     }
   }
 

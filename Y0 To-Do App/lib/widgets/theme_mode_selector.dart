@@ -6,6 +6,7 @@
 // - Email: info@Y0ussef.com
 
 import 'package:flutter/material.dart';
+import '../l10n/l10n_extension.dart';
 
 class ThemeModeSelector extends StatelessWidget {
   final String currentThemeMode;
@@ -21,72 +22,65 @@ class ThemeModeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return RadioGroup<String>(
-      groupValue: currentThemeMode,
-      onChanged: (value) {
-        if (value == null) return;
-        onThemeModeChanged(value);
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'اختيار وضع الثيم',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            context.l10n.themeSelectTitle,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: 24),
-            
-            // Light Theme Option
-            _buildThemeOption(
-              context,
-              title: 'الوضع الفاتح',
-              subtitle: 'خلفية بيضاء مع ألوان داكنة',
-              icon: Icons.light_mode,
-              value: 'light',
-              isSelected: currentThemeMode == 'light',
-              previewColor: Colors.white,
-              previewBorderColor: Colors.grey[300]!,
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // Dark Theme Option
-            _buildThemeOption(
-              context,
-              title: 'الوضع الداكن',
-              subtitle: 'خلفية داكنة مع ألوان فاتحة',
-              icon: Icons.dark_mode,
-              value: 'dark',
-              isSelected: currentThemeMode == 'dark',
-              previewColor: const Color(0xFF1E293B),
-              previewBorderColor: Colors.grey[600]!,
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // System Theme Option
-            _buildThemeOption(
-              context,
-              title: 'تلقائي',
-              subtitle: 'يتبع إعدادات النظام',
-              icon: Icons.brightness_auto,
-              value: 'system',
-              isSelected: currentThemeMode == 'system',
-              previewColor: theme.brightness == Brightness.dark 
-                  ? const Color(0xFF1E293B) 
-                  : Colors.white,
-              previewBorderColor: theme.brightness == Brightness.dark 
-                  ? Colors.grey[600]! 
-                  : Colors.grey[300]!,
-            ),
-            
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+          const SizedBox(height: 24),
+          
+          // Light Theme Option
+          _buildThemeOption(
+            context,
+            title: context.l10n.themeLight,
+            subtitle: context.l10n.themeLight,
+            icon: Icons.light_mode,
+            value: 'light',
+            isSelected: currentThemeMode == 'light',
+            previewColor: Colors.white,
+            previewBorderColor: Colors.grey[300]!,
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Dark Theme Option
+          _buildThemeOption(
+            context,
+            title: context.l10n.themeDark,
+            subtitle: context.l10n.themeDark,
+            icon: Icons.dark_mode,
+            value: 'dark',
+            isSelected: currentThemeMode == 'dark',
+            previewColor: const Color(0xFF1E293B),
+            previewBorderColor: Colors.grey[600]!,
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // System Theme Option
+          _buildThemeOption(
+            context,
+            title: context.l10n.themeSystem,
+            subtitle: context.l10n.themeSystem,
+            icon: Icons.brightness_auto,
+            value: 'system',
+            isSelected: currentThemeMode == 'system',
+            previewColor: theme.brightness == Brightness.dark 
+                ? const Color(0xFF1E293B) 
+                : Colors.white,
+            previewBorderColor: theme.brightness == Brightness.dark 
+                ? Colors.grey[600]! 
+                : Colors.grey[300]!,
+          ),
+          
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
@@ -155,23 +149,14 @@ class ThemeModeSelector extends StatelessWidget {
                           : theme.colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: isSelected 
-                          ? theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8) 
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                  ),
                 ],
               ),
             ),
             
             // Selection Indicator
-            Radio<String>(
-              value: value,
-              activeColor: theme.colorScheme.primary,
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
             ),
           ],
         ),

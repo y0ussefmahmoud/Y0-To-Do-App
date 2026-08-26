@@ -6,6 +6,7 @@
 // - Email: info@Y0ussef.com
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// Manually maintained for compatibility. Re-run build_runner if adding more fields.
 
 part of 'app_settings.dart';
 
@@ -24,23 +25,25 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return AppSettings(
-      themeMode: fields[0] as String,
-      language: fields[1] as String,
-      notificationsEnabled: fields[2] as bool,
-      soundEnabled: fields[3] as bool,
-      speechRate: fields[4] as double,
-      speechVolume: fields[5] as double,
-      speechPitch: fields[6] as double,
-      notificationMinutesBefore: fields[7] as int,
-      exactTimeNotificationsEnabled: fields[8] as bool,
-      userName: fields[9] as String,
+      themeMode: fields[0] as String? ?? 'system',
+      language: fields[1] as String? ?? 'ar',
+      notificationsEnabled: fields[2] as bool? ?? true,
+      soundEnabled: fields[3] as bool? ?? true,
+      speechRate: (fields[4] as num?)?.toDouble() ?? 0.5,
+      speechVolume: (fields[5] as num?)?.toDouble() ?? 0.8,
+      speechPitch: (fields[6] as num?)?.toDouble() ?? 1.0,
+      notificationMinutesBefore: fields[7] as int? ?? 60,
+      exactTimeNotificationsEnabled: fields[8] as bool? ?? false,
+      userName: fields[9] as String? ?? 'أحمد',
+      // Field 10: appLockEnabled — safe default false for existing records
+      appLockEnabled: fields[10] as bool? ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, AppSettings obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.themeMode)
       ..writeByte(1)
@@ -60,7 +63,9 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       ..writeByte(8)
       ..write(obj.exactTimeNotificationsEnabled)
       ..writeByte(9)
-      ..write(obj.userName);
+      ..write(obj.userName)
+      ..writeByte(10)
+      ..write(obj.appLockEnabled);
   }
 
   @override

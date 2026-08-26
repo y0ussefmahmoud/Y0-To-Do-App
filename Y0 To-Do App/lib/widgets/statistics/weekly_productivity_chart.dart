@@ -6,6 +6,8 @@
 // - Email: info@Y0ussef.com
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../theme/y0_design_system.dart';
 import '../../widgets/neo_morphic_card.dart';
 import '../../models/task.dart';
@@ -32,17 +34,21 @@ class WeeklyProductivityChart extends StatelessWidget {
             .isAtSameMomentAs(DateTime(day.year, day.month, day.day)) &&
         task.isDone
       ).length;
-      return (dayTasks * 10).clamp(0, 100).toDouble(); // 10 points per task
+      return (dayTasks * 10).clamp(0, 100).toDouble();
     });
-    final weekDays = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
+
+    final locale = Localizations.localeOf(context).languageCode;
+    final weekDayLabels = List.generate(7, (index) {
+      final day = startOfWeek.add(Duration(days: index));
+      return DateFormat('E', locale).format(day);
+    });
 
     return NeoMorphicCard(
       padding: const EdgeInsets.all(Y0DesignSystem.spacing4),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               NeoMorphicCard(
                 padding: const EdgeInsets.all(Y0DesignSystem.spacing2),
@@ -61,8 +67,7 @@ class WeeklyProductivityChart extends StatelessWidget {
               const SizedBox(width: Y0DesignSystem.spacing2),
               Expanded(
                 child: Text(
-                  'الإنتاجية الأسبوعية',
-                  textAlign: TextAlign.end,
+                  context.l10n.weeklyProductivityTitle,
                   style: context.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : context.colorScheme.onSurface,
@@ -96,7 +101,7 @@ class WeeklyProductivityChart extends StatelessWidget {
                             ),
                             child: FractionallySizedBox(
                               alignment: Alignment.bottomCenter,
-                              heightFactor: weeklyData[index] / 100,
+                              heightFactor: (weeklyData[index] / 100).clamp(0.0, 1.0),
                               child: Container(
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
@@ -121,7 +126,7 @@ class WeeklyProductivityChart extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          weekDays[index],
+                          weekDayLabels[index],
                           style: context.textTheme.labelSmall?.copyWith(
                             color: isDark 
                                 ? const Color(0xFFB3B3B3)

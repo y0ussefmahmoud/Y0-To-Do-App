@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/l10n_extension.dart';
 import '../../../theme/y0_design_system.dart';
 import '../../../widgets/neo_morphic_card.dart';
 import '../../../providers/search_provider.dart';
@@ -36,8 +37,16 @@ class _SearchSectionState extends ConsumerState<SearchSection> {
 
   @override
   Widget build(BuildContext context) {
+    final quickTags = [
+      context.l10n.quickTagHighPriority,
+      context.l10n.quickTagTodayTasks,
+      context.l10n.quickTagOverdue,
+      context.l10n.quickTagWork,
+      context.l10n.quickTagStudy,
+    ];
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Search Bar
         NeoMorphicCard(
@@ -47,7 +56,6 @@ class _SearchSectionState extends ConsumerState<SearchSection> {
             vertical: Y0DesignSystem.spacing3,
           ),
           child: Row(
-            textDirection: TextDirection.rtl,
             children: [
               Icon(
                 Icons.search,
@@ -58,16 +66,16 @@ class _SearchSectionState extends ConsumerState<SearchSection> {
               Expanded(
                 child: TextField(
                   controller: _searchController,
-                  textDirection: TextDirection.rtl,
                   style: TextStyle(
                     color: context.colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'ابحث عن مهمة...',
+                    hintText: context.l10n.searchHint,
                     hintStyle: TextStyle(
                       color: context.colorScheme.onSurfaceVariant,
                     ),
                     border: InputBorder.none,
+                    isDense: true,
                   ),
                   onChanged: (value) {
                     ref.read(searchProvider.notifier).updateQuery(
@@ -86,15 +94,8 @@ class _SearchSectionState extends ConsumerState<SearchSection> {
           height: 32,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            reverse: true,
-            children: [
-              'أولوية عالية',
-              'مهام اليوم',
-              'متأخرة',
-              'العمل',
-              'الدراسة',
-            ].map((tag) => Padding(
-              padding: const EdgeInsets.only(left: 8),
+            children: quickTags.map((tag) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               child: GestureDetector(
                 onTap: () {
                   _searchController.text = tag;

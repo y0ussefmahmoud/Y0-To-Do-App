@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/l10n_extension.dart';
 import '../../../theme/y0_design_system.dart';
 import '../../../widgets/daily_progress_orb.dart';
 import '../../../providers/task_provider.dart';
@@ -16,11 +17,11 @@ class ProgressCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // التحسين: مراقبة الـ taskCountsProvider المهيأ مسبقاً
     final counts = ref.watch(taskCountsProvider);
-    final completedTasks = counts.completed;
-    final totalTasks = completedTasks + counts.pending;
-    final progress = totalTasks > 0 ? completedTasks / totalTasks : 0.0;
+    final completedTasks = counts.todayCompleted;
+    final totalTasks = counts.todayTotal;
+    final progress = counts.todayProgress;
+    final progressPercent = counts.todayProgressPercent;
 
     return Container(
       padding: const EdgeInsets.all(Y0DesignSystem.spacing4),
@@ -32,17 +33,17 @@ class ProgressCard extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // معلومات التقدم
+          // معلومات التقدم لمهام اليوم
           Expanded(
             flex: 3,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 FittedBox(
                   fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
+                  alignment: AlignmentDirectional.centerStart,
                   child: Text(
-                    'إنجازك لليوم: ${(progress * 100).round()}%',
+                    context.l10n.dailyProgress(progressPercent),
                     style: context.textTheme.headlineMedium?.copyWith(
                       color: Y0DesignSystem.onPrimary,
                       fontWeight: FontWeight.bold,
@@ -51,11 +52,13 @@ class ProgressCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: Y0DesignSystem.spacing2),
                 Text(
-                  progress >= 0.75
-                      ? 'أنت قريب جداً من إنهاء خطتك اليومية!'
-                      : progress >= 0.5
-                          ? 'أنت تسير بخطى جيدة، استمر!'
-                          : 'لنبدأ اليوم بإنجاز مهامك!',
+                  totalTasks == 0
+                      ? context.l10n.progressStart
+                      : progress >= 0.75
+                          ? context.l10n.progressNearEnd
+                          : progress >= 0.5
+                              ? context.l10n.progressGood
+                              : context.l10n.progressStart,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: context.textTheme.bodyMedium?.copyWith(
@@ -63,7 +66,7 @@ class ProgressCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: Y0DesignSystem.spacing2),
-                // إحصائيات المهام
+                // إحصائيات مهام اليوم
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -77,7 +80,7 @@ class ProgressCard extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '$completedTasks من $totalTasks مهمة',
+                        context.l10n.completedOutOfTotal(completedTasks, totalTasks),
                         style: context.textTheme.labelMedium?.copyWith(
                           color: Y0DesignSystem.onPrimary,
                           fontWeight: FontWeight.w500,
@@ -95,8 +98,8 @@ class ProgressCard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: FractionallySizedBox(
-                    alignment: Alignment.centerRight,
-                    widthFactor: progress,
+                    alignment: AlignmentDirectional.centerStart,
+                    widthFactor: progress.clamp(0.0, 1.0),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Y0DesignSystem.onPrimary,

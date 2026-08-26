@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/l10n_extension.dart';
 import '../../../theme/y0_design_system.dart';
 import '../../../widgets/neo_morphic_card.dart';
 import '../../../models/task.dart';
@@ -34,15 +35,15 @@ class TaskCardWidget extends ConsumerWidget {
     }
   }
 
-  String _getPriorityText(int priority) {
+  String _getPriorityText(BuildContext context, int priority) {
     switch (priority) {
       case 2:
-        return 'عالي';
+        return context.l10n.priorityHigh;
       case 1:
-        return 'متوسط';
+        return context.l10n.priorityMedium;
       case 0:
       default:
-        return 'منخفض';
+        return context.l10n.priorityLow;
     }
   }
 
@@ -51,7 +52,7 @@ class TaskCardWidget extends ConsumerWidget {
     taskService.toggleTaskCompletion(task.id);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(!task.isDone ? 'تم إنجاز المهمة' : 'تم إلغاء إنجاز المهمة'),
+        content: Text(!task.isDone ? context.l10n.taskDoneSnackBar : context.l10n.taskUndoneSnackBar),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -75,12 +76,12 @@ class TaskCardWidget extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تأكيد الحذف'),
-        content: Text('هل أنت متأكد من حذف "${task.title}"؟'),
+        title: Text(context.l10n.taskDeleteConfirmTitle),
+        content: Text(context.l10n.taskDeleteConfirmMessage(task.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () async {
@@ -89,11 +90,11 @@ class TaskCardWidget extends ConsumerWidget {
               await taskService.deleteTask(task.id);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('تم حذف المهمة بنجاح')),
+                  SnackBar(content: Text(context.l10n.taskDeletedSnackBar)),
                 );
               }
             },
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text(context.l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -102,7 +103,6 @@ class TaskCardWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // مراقبة المهمة المحددة فقط لتجنب إعادة بناء الكارد عند تعديل مهام أخرى
     final task = ref.watch(tasksProvider.select((list) {
       for (final t in list) {
         if (t.id == taskId) return t;
@@ -126,7 +126,6 @@ class TaskCardWidget extends ConsumerWidget {
           Expanded(
             flex: 5,
             child: Row(
-              textDirection: TextDirection.rtl,
               children: [
                 // مربع الاختيار (Checkbox)
                 GestureDetector(
@@ -174,7 +173,7 @@ class TaskCardWidget extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Tooltip(
-                message: _getPriorityText(task.priority),
+                message: _getPriorityText(context, task.priority),
                 child: Container(
                   width: 8,
                   height: 8,

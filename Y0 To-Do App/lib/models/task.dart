@@ -67,6 +67,13 @@ class Task {
   @HiveField(6)
   TaskCategory? category;
 
+  /// ترتيب المهمة في القائمة (للسحب والإفلات)
+  /// 
+  /// قيمة افتراضية: 0 (للبيانات القديمة التي لا تحتوي على هذا الحقل)
+  /// يتم تحديثه تلقائياً عند إعادة ترتيب المهام
+  @HiveField(7)
+  int sortOrder;
+
   /// Constructor للمهمة
   /// 
   /// [id] معرف فريد للمهمة (مطلوب)
@@ -76,6 +83,7 @@ class Task {
   /// [priority] الأولوية (افتراضي: 0 - منخفضة)
   /// [isDone] حالة الإنجاز (افتراضي: false)
   /// [category] التصنيف (افتراضي: عام)
+  /// [sortOrder] ترتيب العرض (افتراضي: 0)
   Task({
     required this.id,
     required this.title,
@@ -84,18 +92,20 @@ class Task {
     this.priority = 0,
     this.isDone = false,
     this.category = TaskCategory.general,
+    this.sortOrder = 0,
   });
 
   /// Getter للحصول على التصنيف مع قيمة افتراضية آمنة
   TaskCategory get safeCategory => category ?? TaskCategory.general;
 
   /// التحقق مما إذا كانت المهمة ينطبق عليها شرط الأرشيف
-  /// المهام المكتملة أو التي يمر عليها أكثر من 30 يوماً تذهب للأرشيف تلقائياً
+  /// المهمة تعتبر مؤرشفة إذا كانت:
+  /// 1. مكتملة (isDone == true)
+  /// 2. أو متأخرة بأكثر من 30 يوماً عن تاريخ استحقاقها (inDays > 30)
   bool get isArchived {
     if (isDone) return true;
     if (dueDate != null) {
-      final monthAgo = DateTime.now().subtract(const Duration(days: 30));
-      return dueDate!.isBefore(monthAgo);
+      return DateTime.now().difference(dueDate!).inDays > 30;
     }
     return false;
   }
@@ -122,6 +132,7 @@ class Task {
     int? priority,
     bool? isDone,
     TaskCategory? category,
+    int? sortOrder,
   }) {
     return Task(
       id: id ?? this.id,
@@ -131,6 +142,7 @@ class Task {
       priority: priority ?? this.priority,
       isDone: isDone ?? this.isDone,
       category: category ?? this.category,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 
@@ -144,6 +156,7 @@ class Task {
       'priority': priority,
       'isDone': isDone,
       'category': category?.name,
+      'sortOrder': sortOrder,
     };
   }
 
@@ -156,14 +169,16 @@ class Task {
       dueDate: json['dueDate'] != null 
           ? DateTime.parse(json['dueDate'] as String)
           : null,
-      priority: json['priority'] as int,
-      isDone: json['isDone'] as bool,
+      priority: json['priority'] as int? ?? 0,
+      isDone: json['isDone'] as bool? ?? false,
       category: json['category'] != null
           ? TaskCategory.values.firstWhere(
               (e) => e.name == json['category'] as String,
               orElse: () => TaskCategory.general,
             )
           : TaskCategory.general,
+      // Backward-compatible: old JSON without sortOrder defaults to 0
+      sortOrder: json['sortOrder'] as int? ?? 0,
     );
   }
 }

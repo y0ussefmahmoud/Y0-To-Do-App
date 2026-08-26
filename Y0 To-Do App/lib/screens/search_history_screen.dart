@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import '../l10n/l10n_extension.dart';
 import '../models/search_history.dart';
 import '../providers/search_provider.dart';
 import '../providers/task_provider.dart';
@@ -23,7 +24,7 @@ class SearchHistoryScreen extends ConsumerWidget {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('تاريخ البحث'),
+        title: Text(context.l10n.searchHistoryTitle),
         actions: [
           if (searchState.searchHistory.isNotEmpty)
             IconButton(
@@ -33,13 +34,13 @@ class SearchHistoryScreen extends ConsumerWidget {
                   await ref.read(searchProvider.notifier).clearAllHistory();
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم مسح تاريخ البحث')),
+                      SnackBar(content: Text(context.l10n.searchCleared)),
                     );
                   }
                 }
               },
               icon: const Icon(Icons.clear_all),
-              tooltip: 'مسح الكل',
+              tooltip: context.l10n.clearAllHistory,
             ),
         ],
       ),
@@ -64,7 +65,7 @@ class SearchHistoryScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'لا يوجد تاريخ بحث',
+            context.l10n.noSearchHistoryTitle,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
@@ -72,7 +73,7 @@ class SearchHistoryScreen extends ConsumerWidget {
           ).animate().fadeIn(delay: 200.ms),
           const SizedBox(height: 8),
           Text(
-            'ابدأ بالبحث عن مهام وسيظهر هنا تاريخ البحث',
+            context.l10n.noSearchHistorySubtitle,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
@@ -84,8 +85,7 @@ class SearchHistoryScreen extends ConsumerWidget {
   }
 
   Widget _buildHistoryList(BuildContext context, WidgetRef ref, List<SearchHistory> history, ThemeData theme) {
-    // Group history by date
-    final groupedHistory = _groupHistoryByDate(history);
+    final groupedHistory = _groupHistoryByDate(context, history);
     
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -95,7 +95,6 @@ class SearchHistoryScreen extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Date Header
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
@@ -110,7 +109,6 @@ class SearchHistoryScreen extends ConsumerWidget {
               begin: -0.2,
             ),
             
-            // History Items for this date
             ...group['items'].map<Widget>((item) => _buildHistoryItem(context, ref, item, theme)).toList(),
             
             if (index < groupedHistory.length - 1)
@@ -133,15 +131,15 @@ class SearchHistoryScreen extends ConsumerWidget {
           color: Colors.red,
           borderRadius: BorderRadius.circular(12),
         ),
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 16),
-        child: const Column(
+        alignment: AlignmentDirectional.centerEnd,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.delete, color: Colors.white),
+            const Icon(Icons.delete, color: Colors.white),
             Text(
-              'حذف',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+              context.l10n.delete,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -150,7 +148,7 @@ class SearchHistoryScreen extends ConsumerWidget {
         await ref.read(searchProvider.notifier).deleteHistoryItem(historyItem.id);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم حذف عنصر من تاريخ البحث')),
+            SnackBar(content: Text(context.l10n.taskDeletedSnackBar)),
           );
         }
       },
@@ -176,14 +174,14 @@ class SearchHistoryScreen extends ConsumerWidget {
             children: [
               const SizedBox(height: 4),
               Text(
-                '${historyItem.resultCount} نتيجة',
+                '${historyItem.resultCount}',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                _formatRelativeTime(historyItem.timestamp),
+                _formatRelativeTime(context, historyItem.timestamp),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
@@ -192,15 +190,12 @@ class SearchHistoryScreen extends ConsumerWidget {
           ),
           trailing: IconButton(
             onPressed: () {
-              // Navigate back to home and perform search
               Navigator.of(context).pop();
               final tasks = ref.read(tasksProvider);
               ref.read(searchProvider.notifier).updateQuery(historyItem.query, tasks);
-              // Execute the search
               ref.read(searchProvider.notifier).performSearch(historyItem.query, tasks);
             },
             icon: const Icon(Icons.arrow_forward),
-            tooltip: 'بحث مرة أخرى',
           ),
         ),
       ).animate().slideX(
@@ -212,11 +207,12 @@ class SearchHistoryScreen extends ConsumerWidget {
     );
   }
 
-  List<Map<String, dynamic>> _groupHistoryByDate(List<SearchHistory> history) {
+  List<Map<String, dynamic>> _groupHistoryByDate(BuildContext context, List<SearchHistory> history) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
     final weekAgo = today.subtract(const Duration(days: 7));
+    final locale = Localizations.localeOf(context).languageCode;
     
     final groups = <String, List<SearchHistory>>{};
     
@@ -229,13 +225,13 @@ class SearchHistoryScreen extends ConsumerWidget {
       
       String dateLabel;
       if (itemDate.isAtSameMomentAs(today)) {
-        dateLabel = 'اليوم';
+        dateLabel = context.l10n.filterToday;
       } else if (itemDate.isAtSameMomentAs(yesterday)) {
-        dateLabel = 'أمس';
+        dateLabel = 'Yesterday';
       } else if (itemDate.isAfter(weekAgo)) {
-        dateLabel = 'هذا الأسبوع';
+        dateLabel = context.l10n.filterThisWeek;
       } else {
-        dateLabel = DateFormat('MMMM yyyy', 'ar').format(item.timestamp);
+        dateLabel = DateFormat('MMMM yyyy', locale).format(item.timestamp);
       }
       
       groups.putIfAbsent(dateLabel, () => []).add(item);
@@ -247,40 +243,28 @@ class SearchHistoryScreen extends ConsumerWidget {
     }).toList();
   }
 
-  String _formatRelativeTime(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-    
-    if (difference.inMinutes < 1) {
-      return 'الآن';
-    } else if (difference.inHours < 1) {
-      return 'منذ ${difference.inMinutes} دقيقة';
-    } else if (difference.inDays < 1) {
-      return 'منذ ${difference.inHours} ساعة';
-    } else if (difference.inDays < 7) {
-      return 'منذ ${difference.inDays} يوم';
-    } else {
-      return DateFormat('dd MMMM، HH:mm', 'ar').format(timestamp);
-    }
+  String _formatRelativeTime(BuildContext context, DateTime timestamp) {
+    final locale = Localizations.localeOf(context).languageCode;
+    return DateFormat('dd MMMM, HH:mm', locale).format(timestamp);
   }
 
   Future<bool?> _showClearAllDialog(BuildContext context) {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('مسح تاريخ البحث'),
-        content: const Text('هل أنت متأكد من أنك تريد مسح كل تاريخ البحث؟ لا يمكن التراجع عن هذا الإجراء.'),
+        title: Text(context.l10n.clearAllHistory),
+        content: Text(context.l10n.clearAllConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
             ),
-            child: const Text('مسح الكل'),
+            child: Text(context.l10n.clearAllHistory),
           ),
         ],
       ),

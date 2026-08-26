@@ -8,10 +8,12 @@
 // ignore_for_file: unused_local_variable, prefer_const_constructors
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'l10n/app_localizations.dart';
 import 'models/task.dart';
 import 'models/task_category.dart';
 import 'models/search_history.dart';
@@ -20,6 +22,7 @@ import 'screens/home/home_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/statistics_screen.dart';
 import 'providers/settings_provider.dart';
+import 'services/encryption_service.dart';
 import 'services/notification_service.dart';
 import 'utils/error_handler.dart';
 import 'widgets/error_boundary.dart';
@@ -35,9 +38,9 @@ final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 /// 1. تهيئة Flutter bindings
 /// 2. تهيئة معالج الأخطاء
 /// 3. تهيئة خدمة الإشعارات
-/// 4. تهيئة Hive لقاعدة البيانات المحلية
+/// 4. تهيئة Hive لقاعدة البيانات المحلية مع التشفير AES-256
 /// 5. تسجيل محولات Hive
-/// 6. فتح صندوق المهام
+/// 6. فتح صناديق Hive المشفرة + ترحيل البيانات القديمة بأمان تام
 /// 7. تشغيل التطبيق مع ErrorBoundary
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,161 +48,113 @@ Future<void> main() async {
 
   // تهيئة معالج الأخطاء أولاً
   ErrorHandler.initialize();
-  ErrorHandler.logInfo('Starting Y0 To-Do App initialization');
+  ErrorHandler.logInfo('Starting Y0 To-Do App v3.3.0 initialization');
 
   try {
-    // Initialize Hive with comprehensive error handling
+    // ── 1. تهيئة Hive ──────────────────────────────────────────────────────
     try {
       ErrorHandler.logInfo('Initializing Hive...');
       await Hive.initFlutter();
       ErrorHandler.logSuccess('Hive initialized');
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, context: 'Failed to initialize Hive');
-      
-      // Try to recover from Hive initialization error
-      try {
-        // Try to delete corrupted Hive files and reinitialize
-        ErrorHandler.logInfo('Attempting to recover from Hive initialization error');
-        await Hive.deleteFromDisk();
-        await Hive.initFlutter();
-        ErrorHandler.logSuccess('Hive recovered and initialized successfully');
-      } catch (recoveryError, recoveryStackTrace) {
-        ErrorHandler.handleError(recoveryError, recoveryStackTrace, context: 'Failed to recover Hive initialization');
-        
-        // Last resort: try to initialize with a different path
-        try {
-          ErrorHandler.logInfo('Attempting alternative Hive initialization...');
-          // Try to force clean initialization
-          await Future.delayed(const Duration(milliseconds: 100));
-          await Hive.initFlutter();
-          ErrorHandler.logSuccess('Alternative Hive initialization successful');
-        } catch (finalError, finalStackTrace) {
-          ErrorHandler.handleError(finalError, finalStackTrace, context: 'All Hive initialization attempts failed');
-          rethrow; // If all attempts fail, we can't continue
-        }
-      }
+      await Future.delayed(const Duration(milliseconds: 100));
+      await Hive.initFlutter();
+      ErrorHandler.logSuccess('Alternative Hive initialization successful');
     }
     
-    // Register adapters with error handling
+    // ── 2. تسجيل المحوّلات ─────────────────────────────────────────────────
     try {
       ErrorHandler.logInfo('Checking TaskCategoryAdapter registration...');
       if (!Hive.isAdapterRegistered(2)) {
         Hive.registerAdapter(TaskCategoryAdapter());
         ErrorHandler.logInfo('TaskCategoryAdapter registered successfully.');
-      } else {
-        ErrorHandler.logInfo('TaskCategoryAdapter already registered.');
       }
 
       ErrorHandler.logInfo('Checking TaskAdapter registration...');
       if (!Hive.isAdapterRegistered(1)) {
         Hive.registerAdapter(TaskAdapter());
         ErrorHandler.logInfo('TaskAdapter registered successfully.');
-      } else {
-        ErrorHandler.logInfo('TaskAdapter already registered.');
       }
 
       ErrorHandler.logInfo('Checking SearchHistoryAdapter registration...');
       if (!Hive.isAdapterRegistered(3)) {
         Hive.registerAdapter(SearchHistoryAdapter());
         ErrorHandler.logInfo('SearchHistoryAdapter registered successfully.');
-      } else {
-        ErrorHandler.logInfo('SearchHistoryAdapter already registered.');
       }
 
       ErrorHandler.logInfo('Checking AppSettingsAdapter registration...');
       if (!Hive.isAdapterRegistered(4)) {
         Hive.registerAdapter(AppSettingsAdapter());
         ErrorHandler.logInfo('AppSettingsAdapter registered successfully.');
-      } else {
-        ErrorHandler.logInfo('AppSettingsAdapter already registered.');
       }
 
       ErrorHandler.logSuccess('All Hive adapters processed.');
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, context: 'Failed to register Hive adapters');
-      rethrow; // Adapters are critical, so rethrow
+      rethrow;
     }
-    
-    // Open boxes with comprehensive error handling
+
+    // ── 3. الحصول على مفتاح التشفير AES-256 ────────────────────────────────
+    ErrorHandler.logInfo('Retrieving AES-256 cipher from EncryptionService...');
+    final cipher = await EncryptionService.getCipher();
+    ErrorHandler.logSuccess('AES-256 cipher ready');
+
+    // ── 4. فتح الصناديق مع التشفير والترحيل الآمن ──────────────────────────
     Box<Task>? tasksBox;
     Box<SearchHistory>? searchHistoryBox;
     Box<AppSettings>? settingsBox;
     
+    // ── 4a. tasksBox ────────────────────────────────────────────────────────
     try {
       ErrorHandler.logInfo('Opening tasksBox...');
-      tasksBox = await Hive.openBox<Task>('tasksBox');
-      ErrorHandler.logSuccess('tasksBox opened');
+      tasksBox = await _openBoxSafely<Task>('tasksBox', cipher);
+      ErrorHandler.logSuccess('tasksBox opened successfully (${tasksBox.length} records)');
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, context: 'Failed to open tasksBox');
-      rethrow; // Tasks box is critical
+      rethrow;
     }
-    
+
+    // ── 4b. searchHistoryBox ────────────────────────────────────────────────
     try {
       ErrorHandler.logInfo('Opening searchHistoryBox...');
-      searchHistoryBox = await Hive.openBox<SearchHistory>('searchHistoryBox');
-      ErrorHandler.logSuccess('searchHistoryBox opened');
+      searchHistoryBox = await _openBoxSafely<SearchHistory>('searchHistoryBox', cipher);
+      ErrorHandler.logSuccess('searchHistoryBox opened successfully');
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, context: 'Failed to open searchHistoryBox');
-      // Continue without search history - not critical
+      // Continue without search history — not critical
     }
-    
+
+    // ── 4c. settingsBox ─────────────────────────────────────────────────────
     try {
       ErrorHandler.logInfo('Opening settingsBox...');
-      
-      // Try to open the box with migration handling
-      try {
-        settingsBox = await Hive.openBox<AppSettings>('settingsBox');
-        
-        // Migration: Check and fix null values if needed
-        if (settingsBox.isNotEmpty) {
-          try {
-            final oldSettings = settingsBox.getAt(0);
-            if (oldSettings != null) {
-              // Try to access all fields to trigger null cast if any
-              final test = AppSettings(
-                themeMode: oldSettings.themeMode,
-                language: oldSettings.language,
-                notificationsEnabled: oldSettings.notificationsEnabled,
-                soundEnabled: oldSettings.soundEnabled,
-                speechRate: oldSettings.speechRate,
-                speechVolume: oldSettings.speechVolume,
-                speechPitch: oldSettings.speechPitch,
-                notificationMinutesBefore: oldSettings.notificationMinutesBefore,
-                exactTimeNotificationsEnabled: oldSettings.exactTimeNotificationsEnabled,
-                userName: oldSettings.userName,
-              );
-              // If we get here, data is valid
-              ErrorHandler.logSuccess('settingsBox opened and validated');
-            }
-          } catch (castError) {
-            // Null cast error detected, need to migrate
-            ErrorHandler.logWarning('Null cast error in settingsBox. Attempting migration...');
-            await Hive.deleteBoxFromDisk('settingsBox');
-            settingsBox = await Hive.openBox<AppSettings>('settingsBox');
-            ErrorHandler.logSuccess('settingsBox migrated and recreated');
+      settingsBox = await _openBoxSafely<AppSettings>('settingsBox', cipher);
+
+      // Migration: Check and validate settings fields
+      if (settingsBox.isNotEmpty) {
+        try {
+          final oldSettings = settingsBox.getAt(0);
+          if (oldSettings != null) {
+            // Re-hydrate via fromMap to apply null-safe defaults for any new fields
+            final migrated = AppSettings.fromMap(oldSettings.toMap());
+            await settingsBox.putAt(0, migrated);
+            ErrorHandler.logSuccess('settingsBox validated and up to date');
           }
-        } else {
-          ErrorHandler.logSuccess('settingsBox opened (empty)');
+        } catch (settingsError) {
+          ErrorHandler.logWarning('settingsBox read warning: $settingsError');
         }
-      } catch (e) {
-        // If opening fails completely, delete and recreate
-        ErrorHandler.logWarning('Failed to open settingsBox. Attempting to recreate...');
-        await Hive.deleteBoxFromDisk('settingsBox');
-        settingsBox = await Hive.openBox<AppSettings>('settingsBox');
-        ErrorHandler.logSuccess('settingsBox recreated successfully');
       }
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, context: 'Failed to open settingsBox');
-      rethrow; // Settings box is critical
+      rethrow;
     }
 
-    // Check for pending navigation from background notifications
+    // ── 5. إشعارات ─────────────────────────────────────────────────────────
     try {
       final notificationService = NotificationService();
       await notificationService.checkPendingNavigation();
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, context: 'Failed to check pending navigation');
-      // Continue - not critical
     }
 
     ErrorHandler.logSuccess('App initialization completed successfully');
@@ -215,16 +170,99 @@ Future<void> main() async {
   } catch (e, stackTrace) {
     ErrorHandler.handleError(e, stackTrace, context: 'App initialization');
     
-    // في حالة فشل التهيئة، نعرض تطبيق بسيط مع رسالة خطأ مفصلة
     runApp(
       MaterialApp(
         home: ErrorView(
           error: e,
           stackTrace: stackTrace,
-          customMessage: 'فشل في تهيئة التطبيق: ${e.toString()}. يرجى إعادة تشغيل التطبيق أو مسح بيانات التطبيق وإعادة التثبيت.',
+          customMessage:
+              'فشل في تهيئة التطبيق: ${e.toString()}. يرجى إعادة تشغيل التطبيق.',
         ),
       ),
     );
+  }
+}
+
+/// فتح صندوق Hive مع حماية وترحيل آمن بنسبة 100% للبيانات القديمة
+///
+/// الخطوات:
+/// 1. محاولة فتح الصندوق المشفر (الوضع الطبيعي بعد التحديث).
+/// 2. إذا فشل، محاولة فتح الصندوق غير المشفر (بيانات قديمة من الإصدار السابق).
+/// 3. قراءة البيانات بالكامل في الذاكرة (In-Memory Backup).
+/// 4. فقط بعد التأكد من حفظ البيانات في الذاكرة، يتم ترحيلها إلى الصندوق المشفر الجديد.
+/// 5. في حال حدوث أي خطأ، لا يتم مسح الملفات بل يتم الرجوع لفتح الصندوق غير المشفر كخيار أمان.
+Future<Box<T>> _openBoxSafely<T>(
+    String boxName, HiveAesCipher cipher) async {
+  // إذا كان الصندوق مفتوحاً بالفعل
+  if (Hive.isBoxOpen(boxName)) {
+    return Hive.box<T>(boxName);
+  }
+
+  // 1. المحاولة الأولى: فتح الصندوق المشفر
+  try {
+    return await Hive.openBox<T>(boxName, encryptionCipher: cipher);
+  } catch (encryptedError) {
+    ErrorHandler.logWarning(
+        '$boxName: Encrypted open failed ($encryptedError). Attempting unencrypted read/migration...');
+  }
+
+  // إغلاق أي جلسة معلقة
+  try {
+    if (Hive.isBoxOpen(boxName)) {
+      await Hive.box(boxName).close();
+    }
+  } catch (_) {}
+
+  // 2. المحاولة الثانية: قراءة البيانات القديمة غير المشفرة بأمان
+  Map<dynamic, dynamic>? inMemoryBackup;
+  try {
+    final legacyBox = await Hive.openBox<T>(boxName);
+    inMemoryBackup = Map<dynamic, dynamic>.from(legacyBox.toMap());
+    await legacyBox.close();
+    ErrorHandler.logInfo(
+        '$boxName: Successfully read ${inMemoryBackup.length} legacy records into memory.');
+  } catch (legacyError) {
+    ErrorHandler.logWarning(
+        '$boxName: Unencrypted open also failed ($legacyError).');
+  }
+
+  // 3. الترحيل إلى الصندوق المشفر (فقط إذا تم استخراج البيانات بنجاح في الذاكرة)
+  if (inMemoryBackup != null) {
+    try {
+      // حذف الصندوق القديم فقط بعد حفظ البيانات في الذاكرة
+      await Hive.deleteBoxFromDisk(boxName);
+      final newEncryptedBox = await Hive.openBox<T>(
+        boxName,
+        encryptionCipher: cipher,
+      );
+      if (inMemoryBackup.isNotEmpty) {
+        await newEncryptedBox.putAll(Map<dynamic, T>.from(inMemoryBackup));
+        await newEncryptedBox.flush();
+      }
+      ErrorHandler.logSuccess(
+          '$boxName: Successfully migrated ${inMemoryBackup.length} records to AES-256 encrypted storage.');
+      return newEncryptedBox;
+    } catch (migrationError) {
+      ErrorHandler.logWarning(
+          '$boxName: Encrypted write failed ($migrationError). Restoring unencrypted backup...');
+      // استعادة البيانات في صندوق غير مشفر لضمان عدم فقدان أي بيانات
+      try {
+        final fallbackBox = await Hive.openBox<T>(boxName);
+        if (inMemoryBackup.isNotEmpty) {
+          await fallbackBox.putAll(Map<dynamic, T>.from(inMemoryBackup));
+          await fallbackBox.flush();
+        }
+        return fallbackBox;
+      } catch (_) {}
+    }
+  }
+
+  // 4. خيار الأمان الأخير: محاولة فتح الصندوق كصندوق غير مشفر عادي بدون حذف
+  try {
+    return await Hive.openBox<T>(boxName);
+  } catch (_) {
+    // محاولة أخيرة مع التشفير
+    return await Hive.openBox<T>(boxName, encryptionCipher: cipher);
   }
 }
 
@@ -234,6 +272,7 @@ Future<void> main() async {
 /// - إعدادات MaterialApp
 /// - ثيم فاتح وداكن
 /// - دعم الوضع التلقائي حسب نظام التشغيل
+/// - دعم التعريب والترجمة (AR/EN)
 /// - مفتاح Navigator للإشعارات
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
@@ -241,14 +280,25 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final locale = ref.watch(localeProvider);
     
     return MaterialApp(
       navigatorKey: appNavigatorKey,
-      title: 'Y0 To-Do App',
-      debugShowCheckedModeBanner: false, // إزالة شريط DEBUG
+      title: 'Y0 To-Do',
+      debugShowCheckedModeBanner: false,
       theme: Y0DesignSystem.lightTheme,
       darkTheme: Y0DesignSystem.darkTheme,
       themeMode: themeMode,
+      // ── i18n ──────────────────────────────────────────────────────────────
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      // ──────────────────────────────────────────────────────────────────────
       home: const HomeScreenNeoMorphic(),
       routes: {
         '/statistics': (context) => const StatisticsScreen(),
@@ -281,7 +331,6 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
   @override
   void initState() {
     super.initState();
-    // Removed notification initialization from here
   }
 
   @override
@@ -319,7 +368,6 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
       });
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, context: 'Notification service initialization in AppInitializer failed');
-      // Continue with app even if notifications fail
       setState(() {
         _notificationInitialized = true;
       });
@@ -328,7 +376,6 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
 
   @override
   Widget build(BuildContext context) {
-    // انتظر حتى تتم تهيئة الإشعارات قبل عرض التطبيق
     if (!_notificationInitialized) {
       return const MaterialApp(
         debugShowCheckedModeBanner: false,

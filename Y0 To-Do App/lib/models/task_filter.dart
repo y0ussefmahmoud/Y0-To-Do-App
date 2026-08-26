@@ -11,6 +11,7 @@ enum TaskStatus {
   all,
   pending,
   completed,
+  archived,
 }
 
 enum DateFilter {
@@ -29,6 +30,8 @@ extension TaskStatusExtension on TaskStatus {
         return 'معلقة';
       case TaskStatus.completed:
         return 'مكتملة';
+      case TaskStatus.archived:
+        return 'الأرشيف';
     }
   }
 }

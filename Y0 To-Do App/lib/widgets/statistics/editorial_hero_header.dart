@@ -6,6 +6,7 @@
 // - Email: info@Y0ussef.com
 
 import 'package:flutter/material.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../theme/y0_design_system.dart';
 
 class EditorialHeroHeader extends StatelessWidget {
@@ -18,27 +19,25 @@ class EditorialHeroHeader extends StatelessWidget {
     required this.isDark,
   });
 
-  String _getMotivationalMessage() {
+  String _getMotivationalMessage(BuildContext context) {
     if (completionRate == 100) {
-      return 'إنجاز أسطوري! لقد أكملت 100% من مهامك المخطط لها بنجاح 🎉';
+      return '🎉 100%';
     } else if (completionRate >= 75) {
-      return 'أداء ممتاز! لقد أكملت $completionRate% من مهامك وقريب جداً من إنهائها بالكامل 💪';
+      return context.l10n.progressNearEnd;
     } else if (completionRate >= 50) {
-      return 'تقدم رائع! أكملت $completionRate% من المهام، واصل العمل لإنجاز البقية 🚀';
-    } else if (completionRate > 0) {
-      return 'بداية جيدة! أنجزت $completionRate% من خطتك، استمر بنفس العزيمة 🎯';
+      return context.l10n.progressGood;
     } else {
-      return 'جاهز للبدء؟ أنجز أولى مهامك اليوم لترتفع نسبة إنجازك 🌟';
+      return context.l10n.progressStart;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'V3.2.8 • نظرة عامة',
+          'V3.3.0 • ${context.l10n.statisticsSubtitle}',
           style: context.textTheme.labelMedium?.copyWith(
             color: isDark 
                 ? const Color(0xFF66bb6a)
@@ -48,7 +47,7 @@ class EditorialHeroHeader extends StatelessWidget {
         ),
         const SizedBox(height: Y0DesignSystem.spacing2),
         Text(
-          'إحصائيات الإنجاز الأرشيفية',
+          context.l10n.statisticsTitle,
           style: context.textTheme.displayMedium?.copyWith(
             fontWeight: FontWeight.w800,
             color: isDark 
@@ -56,15 +55,24 @@ class EditorialHeroHeader extends StatelessWidget {
                 : context.colorScheme.onSurface,
           ),
         ),
+        const SizedBox(height: 4),
+        Text(
+          context.l10n.statisticsOverviewSubtitle,
+          style: context.textTheme.labelMedium?.copyWith(
+            color: isDark 
+                ? const Color(0xFF66bb6a).withValues(alpha: 0.8)
+                : context.colorScheme.primary.withValues(alpha: 0.7),
+            letterSpacing: 0.5,
+          ),
+        ),
         const SizedBox(height: Y0DesignSystem.spacing3),
         Text(
-          _getMotivationalMessage(),
+          _getMotivationalMessage(context),
           style: context.textTheme.bodyLarge?.copyWith(
             color: isDark 
                 ? const Color(0xFFB3B3B3)
                 : context.colorScheme.onSurfaceVariant,
           ),
-          textAlign: TextAlign.end,
         ),
       ],
     );

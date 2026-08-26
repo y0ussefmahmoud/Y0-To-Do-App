@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/l10n_extension.dart';
 import '../../../theme/y0_design_system.dart';
 import '../../../widgets/neo_morphic_card.dart';
 import '../../../models/task_filter.dart';
@@ -33,53 +34,41 @@ class QuickFilters extends ConsumerWidget {
     }
   }
 
-  IconData _getCategoryIcon(TaskCategory category) {
-    switch (category) {
-      case TaskCategory.work:
-        return Icons.work;
-      case TaskCategory.personal:
-        return Icons.person;
-      case TaskCategory.shopping:
-        return Icons.shopping_cart;
-      case TaskCategory.health:
-        return Icons.favorite;
-      case TaskCategory.study:
-        return Icons.school;
-      case TaskCategory.general:
-        return Icons.category;
-      case TaskCategory.entertainment:
-        return Icons.movie;
+  String _getDateFilterName(BuildContext context, DateFilter filter) {
+    switch (filter) {
+      case DateFilter.today:
+        return context.l10n.filterToday;
+      case DateFilter.thisWeek:
+        return context.l10n.filterThisWeek;
+      case DateFilter.overdue:
+        return context.l10n.filterOverdue;
+      case DateFilter.all:
+        return context.l10n.filterAll;
     }
   }
 
-  String _getCategoryName(TaskCategory category) {
-    switch (category) {
-      case TaskCategory.work:
-        return 'العمل';
-      case TaskCategory.personal:
-        return 'الشخصي';
-      case TaskCategory.shopping:
-        return 'التسوق';
-      case TaskCategory.health:
-        return 'الصحة';
-      case TaskCategory.study:
-        return 'الدراسة';
-      case TaskCategory.general:
-        return 'عامة';
-      case TaskCategory.entertainment:
-        return 'الترفيه';
-    }
-  }
-
-  String _getPriorityText(int priority) {
+  String _getPriorityText(BuildContext context, int priority) {
     switch (priority) {
       case 2:
-        return 'عالي';
+        return context.l10n.priorityHigh;
       case 1:
-        return 'متوسط';
+        return context.l10n.priorityMedium;
       case 0:
       default:
-        return 'منخفض';
+        return context.l10n.priorityLow;
+    }
+  }
+
+  String _getStatusName(BuildContext context, TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return context.l10n.filterPending;
+      case TaskStatus.completed:
+        return context.l10n.filterCompleted;
+      case TaskStatus.archived:
+        return context.l10n.filterArchive;
+      case TaskStatus.all:
+        return context.l10n.filterAll;
     }
   }
 
@@ -88,26 +77,26 @@ class QuickFilters extends ConsumerWidget {
     final currentFilter = ref.watch(taskFilterProvider);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Text(
+              context.l10n.tasksSectionTitle,
+              style: context.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             TextButton(
               onPressed: () => _handleViewAll(context, ref),
               child: Text(
-                'عرض الكل',
+                context.l10n.viewAll,
                 style: TextStyle(
                   color: context.colorScheme.primary,
                   fontWeight: FontWeight.w500,
                 ),
-              ),
-            ),
-            Text(
-              'المهام',
-              style: context.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -118,7 +107,6 @@ class QuickFilters extends ConsumerWidget {
           height: 50,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            reverse: true,
             children: [
               _buildArchiveFilterButton(context, ref),
               _buildStatusFilterButton(context, TaskStatus.completed, currentFilter.status, ref),
@@ -144,12 +132,11 @@ class QuickFilters extends ConsumerWidget {
 
   Widget _buildStatusFilterButton(BuildContext context, TaskStatus status, TaskStatus? currentStatus, WidgetRef ref) {
     final isActive = status == currentStatus;
-    // التحسين: استخدام select لمراقبة العدد الخاص بهذا الفلتر فقط
     final filteredCount = ref.watch(taskCountsProvider.select((c) =>
         status == TaskStatus.completed ? c.completed : c.pending));
 
     return Padding(
-      padding: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: NeoMorphicCard(
         padding: const EdgeInsets.symmetric(
           horizontal: Y0DesignSystem.spacing2,
@@ -174,7 +161,7 @@ class QuickFilters extends ConsumerWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              status.displayName,
+              _getStatusName(context, status),
               style: TextStyle(
                 color: isActive 
                     ? context.colorScheme.onPrimary 
@@ -211,7 +198,6 @@ class QuickFilters extends ConsumerWidget {
 
   Widget _buildDateFilterButton(BuildContext context, DateFilter filter, Set<DateFilter> activeFilters, WidgetRef ref) {
     final isActive = activeFilters.contains(filter);
-    // التحسين: استخدام select لمراقبة العدد الخاص بهذا الفلتر فقط
     final filteredCount = ref.watch(taskCountsProvider.select((c) {
       switch (filter) {
         case DateFilter.today: return c.today;
@@ -222,7 +208,7 @@ class QuickFilters extends ConsumerWidget {
     }));
 
     return Padding(
-      padding: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: NeoMorphicCard(
         padding: const EdgeInsets.symmetric(
           horizontal: Y0DesignSystem.spacing2,
@@ -247,7 +233,7 @@ class QuickFilters extends ConsumerWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              filter.displayName,
+              _getDateFilterName(context, filter),
               style: context.textTheme.labelSmall?.copyWith(
                 color: isActive 
                     ? context.colorScheme.onPrimary 
@@ -285,7 +271,6 @@ class QuickFilters extends ConsumerWidget {
 
   Widget _buildPriorityFilterButton(BuildContext context, int priority, Set<int> currentPriorities, WidgetRef ref) {
     final isActive = currentPriorities.contains(priority);
-    // التحسين: استخدام select لمراقبة العدد الخاص بهذا الفلتر فقط
     final filteredCount = ref.watch(taskCountsProvider.select((c) {
       if (priority == 2) return c.priorityHigh;
       if (priority == 1) return c.priorityMedium;
@@ -293,7 +278,7 @@ class QuickFilters extends ConsumerWidget {
     }));
 
     return Padding(
-      padding: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: NeoMorphicCard(
         padding: const EdgeInsets.symmetric(
           horizontal: Y0DesignSystem.spacing2,
@@ -318,7 +303,7 @@ class QuickFilters extends ConsumerWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              _getPriorityText(priority),
+              _getPriorityText(context, priority),
               style: context.textTheme.labelSmall?.copyWith(
                 color: isActive 
                     ? context.colorScheme.onPrimary 
@@ -356,12 +341,11 @@ class QuickFilters extends ConsumerWidget {
 
   Widget _buildCategoryFilterButton(BuildContext context, TaskCategory category, Set<TaskCategory> currentCategories, WidgetRef ref) {
     final isActive = currentCategories.contains(category);
-    // التحسين: استخدام select لمراقبة العدد الخاص بهذا الفلتر فقط
     final filteredCount = ref.watch(taskCountsProvider.select((c) =>
         c.categoryCounts[category] ?? 0));
 
     return Padding(
-      padding: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: NeoMorphicCard(
         padding: const EdgeInsets.symmetric(
           horizontal: Y0DesignSystem.spacing2,
@@ -378,7 +362,7 @@ class QuickFilters extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              _getCategoryIcon(category),
+              category.icon,
               size: 14,
               color: isActive 
                   ? context.colorScheme.onPrimary 
@@ -386,7 +370,7 @@ class QuickFilters extends ConsumerWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              _getCategoryName(category),
+              category.localizedName(context),
               style: context.textTheme.labelSmall?.copyWith(
                 color: isActive 
                     ? context.colorScheme.onPrimary 
@@ -423,11 +407,12 @@ class QuickFilters extends ConsumerWidget {
   }
 
   Widget _buildArchiveFilterButton(BuildContext context, WidgetRef ref) {
-    final isArchivedActive = ref.watch(taskFilterProvider.select((f) => f.status == TaskStatus.completed));
-    final archivedCount = ref.watch(taskCountsProvider.select((c) => c.archived));
+    final currentFilter = ref.watch(taskFilterProvider);
+    final isArchivedActive = currentFilter.status == TaskStatus.archived;
+    final archivedCount = ref.watch(archivedTasksProvider.select((list) => list.length));
 
     return Padding(
-      padding: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: NeoMorphicCard(
         padding: const EdgeInsets.symmetric(
           horizontal: Y0DesignSystem.spacing2,
@@ -438,7 +423,7 @@ class QuickFilters extends ConsumerWidget {
             ? context.colorScheme.primary 
             : context.colorScheme.surfaceContainerLow,
         onTap: () {
-          ref.read(taskFilterProvider.notifier).update((f) => f.toggleStatus(TaskStatus.completed));
+          ref.read(taskFilterProvider.notifier).update((f) => f.toggleStatus(TaskStatus.archived));
         },
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -452,7 +437,7 @@ class QuickFilters extends ConsumerWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              'الأرشيف',
+              context.l10n.filterArchive,
               style: TextStyle(
                 color: isArchivedActive 
                     ? context.colorScheme.onPrimary 

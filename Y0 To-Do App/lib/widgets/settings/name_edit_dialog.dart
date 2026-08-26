@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/l10n_extension.dart';
 import '../../../providers/settings_provider.dart';
 
 class NameEditDialog extends ConsumerStatefulWidget {
@@ -34,21 +35,19 @@ class _NameEditDialogState extends ConsumerState<NameEditDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('تعديل اسم المستخدم'),
+      title: Text(context.l10n.editNameTitle),
       content: TextField(
         controller: _controller,
-        decoration: const InputDecoration(
-          labelText: 'الاسم',
-          hintText: 'أدخل اسمك',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          labelText: context.l10n.userNameLabel,
+          border: const OutlineInputBorder(),
         ),
-        textDirection: TextDirection.rtl,
         autofocus: true,
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.cancel),
         ),
         TextButton(
           onPressed: () {
@@ -57,11 +56,11 @@ class _NameEditDialogState extends ConsumerState<NameEditDialog> {
               ref.read(settingsProvider.notifier).updateUserName(name);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('تم تحديث اسم المستخدم')),
+                SnackBar(content: Text(context.l10n.nameUpdated)),
               );
             }
           },
-          child: const Text('حفظ'),
+          child: Text(context.l10n.save),
         ),
       ],
     );
