@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../theme/y0_design_system.dart';
 import '../../widgets/bottom_navigation.dart';
 import '../../widgets/voice_input_button.dart';
@@ -50,7 +51,7 @@ class HomeScreenNeoMorphic extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'الإدخال الصوتي والتحليل الذكي',
+              context.l10n.voiceInputTitle,
               style: context.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -72,7 +73,7 @@ class HomeScreenNeoMorphic extends ConsumerWidget {
             ),
             const SizedBox(height: Y0DesignSystem.spacing2),
             Text(
-              'انقر الميكروفون للتحدث بأمر صوتي',
+              context.l10n.voiceInputHint,
               style: context.textTheme.bodyMedium?.copyWith(
                 color: context.colorScheme.onSurfaceVariant,
               ),
@@ -126,22 +127,12 @@ class HomeScreenNeoMorphic extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    textDirection: TextDirection.rtl,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Y0 To-Do',
-                            style: context.textTheme.headlineMedium?.copyWith(
-                              color: context.colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                  Text(
+                    context.l10n.appTitle,
+                    style: context.textTheme.headlineMedium?.copyWith(
+                      color: context.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -156,47 +147,44 @@ class HomeScreenNeoMorphic extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: context.colorScheme.surface,
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: CustomScrollView(
-          slivers: [
-            // Top App Bar
-            _buildSliverAppBar(context),
-            
-            // Main Content Components
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Y0DesignSystem.spacing3,
-              ),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: Y0DesignSystem.spacing3),
-                  const GreetingCard(),
-                  const SizedBox(height: Y0DesignSystem.spacing3),
-                  const ProgressCard(),
-                  const SizedBox(height: Y0DesignSystem.spacing3),
-                  const SearchSection(),
-                  const SizedBox(height: Y0DesignSystem.spacing3),
-                  const QuickFilters(),
-                  const SizedBox(height: Y0DesignSystem.spacing2),
-                ]),
-              ),
+      body: CustomScrollView(
+        slivers: [
+          // Top App Bar
+          _buildSliverAppBar(context),
+          
+          // Main Content Components
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Y0DesignSystem.spacing3,
             ),
-            
-            // Lazy-loaded Tasks list directly in the CustomScrollView
-            const SliverPadding(
-              padding: EdgeInsets.symmetric(
-                horizontal: Y0DesignSystem.spacing3,
-              ),
-              sliver: TaskListWidget(),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                const SizedBox(height: Y0DesignSystem.spacing3),
+                const GreetingCard(),
+                const SizedBox(height: Y0DesignSystem.spacing3),
+                const ProgressCard(),
+                const SizedBox(height: Y0DesignSystem.spacing3),
+                const SearchSection(),
+                const SizedBox(height: Y0DesignSystem.spacing3),
+                const QuickFilters(),
+                const SizedBox(height: Y0DesignSystem.spacing2),
+              ]),
             ),
-            
-            // Bottom spacing for navigation and FABs
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 160),
+          ),
+          
+          // Lazy-loaded Tasks list directly in the CustomScrollView
+          const SliverPadding(
+            padding: EdgeInsets.symmetric(
+              horizontal: Y0DesignSystem.spacing3,
             ),
-          ],
-        ),
+            sliver: TaskListWidget(),
+          ),
+          
+          // Bottom spacing for navigation and FABs
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 160),
+          ),
+        ],
       ),
       // Multi-functional FABs
       floatingActionButton: Column(

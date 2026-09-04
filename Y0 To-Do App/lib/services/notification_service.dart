@@ -96,6 +96,11 @@ class NotificationService {
     await _scheduler.snoozeNotification(taskId);
   }
 
+  /// تأجيل الإشعار إلى صباح الغد (9:00 ص)
+  Future<void> snoozeTomorrowNotification(String taskId) async {
+    await _scheduler.snoozeTomorrowNotification(taskId);
+  }
+
   /// تعيين مفتاح Navigator للوصول إلى context
   void setNavigatorKey(GlobalKey<NavigatorState> key) {
     _handler.setNavigatorKey(key);

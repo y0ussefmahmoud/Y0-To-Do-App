@@ -198,7 +198,14 @@ class TaskRepository {
         throw TaskNotFoundException(id);
       }
       
-      await _box.put(id, task.copyWith(isDone: !task.isDone));
+      final newIsDone = !task.isDone;
+      await _box.put(
+        id,
+        task.copyWith(
+          isDone: newIsDone,
+          completedAt: newIsDone ? DateTime.now() : null,
+        ),
+      );
       ErrorHandler.logSuccess('Task status toggled in storage: $id');
     } catch (e, stackTrace) {
       if (e is TaskRepositoryException || e is TaskNotFoundException) {

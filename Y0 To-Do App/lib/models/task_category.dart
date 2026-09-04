@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import '../l10n/app_localizations.dart';
 
 part 'task_category.g.dart';
 
@@ -39,6 +40,26 @@ TaskCategory taskCategoryFromString(String value) {
 }
 
 extension TaskCategoryExtension on TaskCategory {
+  String localizedName(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    switch (this) {
+      case TaskCategory.work:
+        return l10n.categoryWork;
+      case TaskCategory.personal:
+        return l10n.categoryPersonal;
+      case TaskCategory.study:
+        return l10n.categoryStudy;
+      case TaskCategory.health:
+        return l10n.categoryHealth;
+      case TaskCategory.general:
+        return l10n.categoryGeneral;
+      case TaskCategory.shopping:
+        return l10n.categoryShopping;
+      case TaskCategory.entertainment:
+        return l10n.categoryEntertainment;
+    }
+  }
+
   String get displayName {
     switch (this) {
       case TaskCategory.work:
@@ -99,5 +120,4 @@ extension TaskCategoryExtension on TaskCategory {
   String toStringValue() {
     return name;
   }
-
 }

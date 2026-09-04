@@ -7,23 +7,11 @@
 
 import 'package:hive/hive.dart';
 import 'task_category.dart';
+import 'recurrence_rule.dart';
+import 'sub_task.dart';
 
 part 'task.g.dart';
 
-/// نموذج المهمة (Task Model)
-/// 
-/// يمثل مهمة واحدة في التطبيق مع جميع خصائصها
-/// يستخدم Hive للتخزين المحلي
-/// 
-/// مثال على الاستخدام:
-/// ```dart
-/// final task = Task(
-///   id: '123',
-///   title: 'إنهاء المشروع',
-///   priority: 2,
-///   dueDate: DateTime.now().add(Duration(days: 1)),
-/// );
-/// ```
 /// Sentinel class: يميّز بين "لا قيمة محددة" و null الصريحة في copyWith
 class _Unset {
   const _Unset();
@@ -31,6 +19,10 @@ class _Unset {
 
 const _unset = _Unset();
 
+/// نموذج المهمة (Task Model)
+/// 
+/// يمثل مهمة واحدة في التطبيق مع جميع خصائصها وتفرعاتها
+/// يستخدم Hive للتخزين المحلي المشفر
 @HiveType(typeId: 1)
 class Task {
   /// معرف فريد للمهمة (UUID)
@@ -49,33 +41,38 @@ class Task {
   @HiveField(3)
   DateTime? dueDate;
 
-  /// أولوية المهمة
-  /// - 0: منخفضة (Low)
-  /// - 1: متوسطة (Medium)
-  /// - 2: عالية (High)
+  /// أولوية المهمة (0: منخفضة، 1: متوسطة، 2: عالية)
   @HiveField(4)
   int priority;
 
-  /// حالة إنجاز المهمة
-  /// - true: مكتملة
-  /// - false: قيد التنفيذ
+  /// حالة إنجاز المهمة (true: مكتملة، false: قيد التنفيذ)
   @HiveField(5)
   bool isDone;
 
   /// تصنيف المهمة
-  /// يساعد في تنظيم المهام حسب النوع (عمل، شخصي، دراسة، صحة، عام)
   @HiveField(6)
   TaskCategory? category;
 
-  /// Constructor للمهمة
-  /// 
-  /// [id] معرف فريد للمهمة (مطلوب)
-  /// [title] عنوان المهمة (مطلوب)
-  /// [note] ملاحظات إضافية (اختياري)
-  /// [dueDate] تاريخ الاستحقاق (اختياري)
-  /// [priority] الأولوية (افتراضي: 0 - منخفضة)
-  /// [isDone] حالة الإنجاز (افتراضي: false)
-  /// [category] التصنيف (افتراضي: عام)
+  /// ترتيب المهمة في القائمة (للسحب والإفلات)
+  @HiveField(7)
+  int sortOrder;
+
+  /// قاعدة تكرار المهمة (اختياري)
+  @HiveField(8)
+  RecurrenceRule? recurrenceRule;
+
+  /// المهام الفرعية / قائمة التحقق (Checklist)
+  @HiveField(9)
+  List<SubTask> subtasks;
+
+  /// الوسوم والكلمات الدلالية المخصصة
+  @HiveField(10)
+  List<String> tags;
+
+  /// وقت إكمال المهمة الفعلي
+  @HiveField(13)
+  DateTime? completedAt;
+
   Task({
     required this.id,
     required this.title,
@@ -84,36 +81,39 @@ class Task {
     this.priority = 0,
     this.isDone = false,
     this.category = TaskCategory.general,
+    this.sortOrder = 0,
+    this.recurrenceRule,
+    this.subtasks = const [],
+    this.tags = const [],
+    this.completedAt,
   });
 
   /// Getter للحصول على التصنيف مع قيمة افتراضية آمنة
   TaskCategory get safeCategory => category ?? TaskCategory.general;
 
+  /// هل المهمة متكررة دورياً؟
+  bool get isRecurring => recurrenceRule != null;
+
+  /// عدد المهام الفرعية المكتملة
+  int get completedSubtasksCount => subtasks.where((s) => s.isDone).length;
+
+  /// نسبة إنجاز المهام الفرعية (0.0 إلى 1.0)
+  double get subtasksProgress =>
+      subtasks.isEmpty ? 0.0 : completedSubtasksCount / subtasks.length;
+
   /// التحقق مما إذا كانت المهمة ينطبق عليها شرط الأرشيف
-  /// المهام المكتملة أو التي يمر عليها أكثر من 30 يوماً تذهب للأرشيف تلقائياً
+  /// المهمة تعتبر مؤرشفة إذا كانت:
+  /// 1. مكتملة (isDone == true)
+  /// 2. أو متأخرة بأكثر من 30 يوماً عن تاريخ استحقاقها (inDays > 30)
   bool get isArchived {
     if (isDone) return true;
     if (dueDate != null) {
-      final monthAgo = DateTime.now().subtract(const Duration(days: 30));
-      return dueDate!.isBefore(monthAgo);
+      return DateTime.now().difference(dueDate!).inDays > 30;
     }
     return false;
   }
 
   /// إنشاء نسخة جديدة من المهمة مع تعديل بعض الخصائص
-  /// 
-  /// يستخدم لتحديث المهمة دون تعديل النسخة الأصلية
-  /// جميع المعاملات اختيارية، إذا لم يتم تمريرها يتم استخدام القيم الحالية
-  /// لمسح حقل nullable مثل dueDate أو note، مرّر null صراحةً
-  /// 
-  /// مثال:
-  /// ```dart
-  /// final updatedTask = task.copyWith(
-  ///   title: 'عنوان جديد',
-  ///   dueDate: null,  // يحذف التاريخ
-  ///   isDone: true,
-  /// );
-  /// ```
   Task copyWith({
     String? id,
     String? title,
@@ -122,6 +122,11 @@ class Task {
     int? priority,
     bool? isDone,
     TaskCategory? category,
+    int? sortOrder,
+    Object? recurrenceRule = _unset,
+    List<SubTask>? subtasks,
+    List<String>? tags,
+    Object? completedAt = _unset,
   }) {
     return Task(
       id: id ?? this.id,
@@ -131,6 +136,13 @@ class Task {
       priority: priority ?? this.priority,
       isDone: isDone ?? this.isDone,
       category: category ?? this.category,
+      sortOrder: sortOrder ?? this.sortOrder,
+      recurrenceRule: recurrenceRule is _Unset
+          ? this.recurrenceRule
+          : recurrenceRule as RecurrenceRule?,
+      subtasks: subtasks ?? this.subtasks,
+      tags: tags ?? this.tags,
+      completedAt: completedAt is _Unset ? this.completedAt : completedAt as DateTime?,
     );
   }
 
@@ -144,6 +156,11 @@ class Task {
       'priority': priority,
       'isDone': isDone,
       'category': category?.name,
+      'sortOrder': sortOrder,
+      'recurrenceRule': recurrenceRule?.toJson(),
+      'subtasks': subtasks.map((s) => s.toJson()).toList(),
+      'tags': tags,
+      'completedAt': completedAt?.toIso8601String(),
     };
   }
 
@@ -156,14 +173,29 @@ class Task {
       dueDate: json['dueDate'] != null 
           ? DateTime.parse(json['dueDate'] as String)
           : null,
-      priority: json['priority'] as int,
-      isDone: json['isDone'] as bool,
+      priority: json['priority'] as int? ?? 0,
+      isDone: json['isDone'] as bool? ?? false,
       category: json['category'] != null
           ? TaskCategory.values.firstWhere(
               (e) => e.name == json['category'] as String,
               orElse: () => TaskCategory.general,
             )
           : TaskCategory.general,
+      sortOrder: json['sortOrder'] as int? ?? 0,
+      recurrenceRule: json['recurrenceRule'] != null
+          ? RecurrenceRule.fromJson(json['recurrenceRule'] as Map<String, dynamic>)
+          : null,
+      subtasks: (json['subtasks'] as List<dynamic>?)
+              ?.map((e) => SubTask.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      tags: (json['tags'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'] as String)
+          : null,
     );
   }
 }

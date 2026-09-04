@@ -1,0 +1,257 @@
+{
+  "@@locale": "ar",
+  "@@author": "Eng / Youssef Mahmoud Abdelgawad",
+
+  "appTitle": "Y0 To-Do",
+  "appInitializing": "جاري تهيئة التطبيق...",
+
+  "navHome": "الرئيسية",
+  "navStatistics": "الإحصائيات",
+  "navSettings": "الإعدادات",
+
+  "homeGreeting": "أهلاً بك، {name}!",
+  "@homeGreeting": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "morningGreeting": "صباح الخير، حان وقت بداية يوم إيجابي ومثمر.",
+  "afternoonGreeting": "مساء الخير، حان وقت إنجاز باقي مهامك.",
+  "eveningGreeting": "مساء الخير، حان وقت مراجعة إنجازات يومك.",
+
+  "dailyProgress": "إنجازك لليوم: {percent}%",
+  "@dailyProgress": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "progressNearEnd": "أنت قريب جداً من إنهاء خطتك اليومية!",
+  "progressGood": "أنت تسير بخطى جيدة، استمر!",
+  "progressStart": "لنبدأ اليوم بإنجاز مهامك!",
+  "completedOutOfTotal": "{completed} من {total} مهمة",
+  "@completedOutOfTotal": {
+    "placeholders": {
+      "completed": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "searchHint": "ابحث عن مهمة...",
+  "searchHistoryTitle": "تاريخ البحث",
+  "clearAllHistory": "مسح الكل",
+  "clearAllConfirm": "هل أنت متأكد من مسح تاريخ البحث بالكامل؟",
+  "noSearchHistoryTitle": "لا يوجد تاريخ بحث",
+  "noSearchHistorySubtitle": "ابدأ بالبحث عن مهام وسيظهر هنا تاريخ البحث",
+  "searchCleared": "تم مسح تاريخ البحث",
+
+  "quickTagHighPriority": "أولوية عالية",
+  "quickTagTodayTasks": "مهام اليوم",
+  "quickTagOverdue": "متأخرة",
+  "quickTagWork": "العمل",
+  "quickTagStudy": "الدراسة",
+
+  "tasksSectionTitle": "المهام",
+  "viewAll": "عرض الكل",
+  "noTasksTitle": "لا توجد مهام حالياً",
+  "noTasksSubtitle": "إما أنك أنهيت كل المهام أو لا توجد نتائج مطابقة",
+
+  "filterAll": "الكل",
+  "filterPending": "معلقة",
+  "filterCompleted": "مكتملة",
+  "filterArchive": "الأرشيف",
+  "filterToday": "اليوم",
+  "filterThisWeek": "هذا الأسبوع",
+  "filterOverdue": "متأخرة",
+
+  "priorityHigh": "عالية",
+  "priorityMedium": "متوسطة",
+  "priorityLow": "منخفضة",
+
+  "categoryWork": "عمل",
+  "categoryPersonal": "شخصي",
+  "categoryStudy": "دراسة",
+  "categoryHealth": "صحة",
+  "categoryGeneral": "عام",
+  "categoryShopping": "تسوق",
+  "categoryEntertainment": "ترفيه",
+
+  "taskDoneSnackBar": "تم إنجاز المهمة",
+  "taskUndoneSnackBar": "تم إلغاء إنجاز المهمة",
+  "taskDeleteConfirmTitle": "تأكيد الحذف",
+  "taskDeleteConfirmMessage": "هل أنت متأكد من حذف \"{title}\"؟",
+  "@taskDeleteConfirmMessage": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "taskDeletedSnackBar": "تم حذف المهمة بنجاح",
+
+  "addTaskTitle": "إضافة مهمة جديدة",
+  "editTaskTitle": "تعديل المهمة",
+  "save": "حفظ",
+  "cancel": "إلغاء",
+  "delete": "حذف",
+  "confirm": "تأكيد",
+
+  "taskTitleLabel": "عنوان المهمة",
+  "taskTitleRequired": "عنوان المهمة مطلوب",
+  "taskNoteLabel": "ملاحظات (اختيارية)",
+  "pickDueDateLabel": "تحديد تاريخ الاستحقاق",
+  "dueDatePrefix": "الاستحقاق: {date}",
+  "@dueDatePrefix": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+
+  "smartSuggestions": "اقتراحات ذكية:",
+  "suggestedPriority": "الأولوية المقترحة: {priority}",
+  "@suggestedPriority": {
+    "placeholders": { "priority": { "type": "String" } }
+  },
+  "suggestedDate": "التاريخ المقترح: {date}",
+  "@suggestedDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "applyPriority": "تطبيق الأولوية",
+  "applyDate": "تطبيق التاريخ",
+
+  "priorityLabel": "الأولوية:",
+  "categoryLabel": "التصنيف:",
+  "createTaskButton": "إنشاء المهمة",
+  "saveChangesButton": "حفظ التغييرات",
+
+  "settingsTitle": "الإعدادات",
+  "appearanceSection": "المظهر",
+  "themeModeLabel": "وضع الثيم",
+  "themeLight": "الوضع الفاتح",
+  "themeDark": "الوضع الداكن",
+  "themeSystem": "تلقائي (حسب النظام)",
+  "themeChanged": "تم تغيير وضع الثيم",
+  "themeSelectTitle": "اختر وضع الثيم",
+
+  "languageSection": "اللغة",
+  "languageLabel": "لغة التطبيق",
+  "languageArabic": "العربية",
+  "languageEnglish": "English",
+  "languageSelectTitle": "اختر اللغة",
+
+  "notificationsSection": "الإشعارات",
+  "enableNotifications": "تفعيل الإشعارات",
+  "enableNotificationsSubtitle": "استلام إشعارات للمهام والمواعيد",
+  "notificationsEnabledSnackBar": "تم تفعيل الإشعارات وجدولة التذكيرات",
+  "notificationsDisabledSnackBar": "تم تعطيل الإشعارات",
+  "reminderTimeLabel": "وقت التذكير",
+  "reminderTimeSubtitle": "قبل موعد المهمة بـ {time}",
+  "@reminderTimeSubtitle": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "reminderTimeSelectTitle": "اختر وقت التذكير",
+  "reminderTimeUpdated": "تم تحديث وقت التذكير",
+
+  "exactTimeNotifications": "إشعارات دقيقة الوقت",
+  "exactTimeNotificationsSubtitle": "إشعار إضافي يظهر في الوقت المحدد تماماً",
+  "exactTimeNotificationsEnabledSnackBar": "تم تفعيل الإشعارات الدقيقة",
+  "exactTimeNotificationsDisabledSnackBar": "تم تعطيل الإشعارات الدقيقة",
+
+  "testNotification": "اختبار الإشعارات",
+  "testNotificationSubtitle": "إرسال إشعار تجريبي",
+  "testNotificationSent": "تم إرسال الإشعار التجريبي",
+  "testNotificationTitle": "اختبار",
+  "testNotificationBody": "هذا إشعار تجريبي",
+
+  "voiceSettingsSection": "إعدادات الصوت",
+  "soundSettingsUpdated": "تم تحديث إعدادات الصوت",
+
+  "securitySection": "الأمان",
+  "appLockLabel": "قفل التطبيق",
+  "appLockSubtitle": "حماية التطبيق بالبصمة أو رمز الجهاز",
+  "appLockEnabledSnackBar": "تم تفعيل قفل التطبيق",
+  "appLockDisabledSnackBar": "تم تعطيل قفل التطبيق",
+
+  "profileSection": "الملف الشخصي",
+  "userNameLabel": "اسم المستخدم",
+  "editNameTitle": "تعديل الاسم",
+  "nameRequired": "يرجى إدخال الاسم",
+  "nameUpdated": "تم تحديث الاسم بنجاح",
+
+  "aboutSection": "حول التطبيق",
+  "aboutAppLabel": "معلومات التطبيق",
+  "aboutAppSubtitle": "Y0 To-Do App v3.4.0",
+  "aboutAppDescription": "تطبيق مهام احترافي مع دعم كامل للغتين العربية والإنجليزية، التشفير الآمن AES-256، وترتيب المهام بالأولوية.",
+  "resetSettingsLabel": "إعادة تعيين الإعدادات",
+  "resetSettingsSubtitle": "استعادة جميع الإعدادات الافتراضية",
+  "resetConfirmTitle": "إعادة تعيين الإعدادات",
+  "resetConfirmMessage": "هل أنت متأكد من إعادة تعيين جميع الإعدادات إلى القيم الافتراضية؟",
+  "settingsResetSnackBar": "تم إعادة تعيين جميع الإعدادات",
+
+  "backupSection": "النسخ الاحتياطي",
+  "createBackupLabel": "إنشاء نسخة احتياطية",
+  "createBackupSubtitle": "تصدير جميع بيانات التطبيق",
+  "backupSuccessSnackBar": "تم إنشاء النسخة الاحتياطية بنجاح",
+  "backupFailedSnackBar": "فشل إنشاء النسخة الاحتياطية: {error}",
+  "@backupFailedSnackBar": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "restoreBackupLabel": "استعادة نسخة احتياطية",
+  "restoreBackupSubtitle": "استيراد بيانات من نسخة احتياطية",
+  "restoreConfirmTitle": "استعادة نسخة احتياطية",
+  "restoreConfirmMessage": "هل تريد استعادة نسخة احتياطية؟ سيتم استبدال جميع البيانات الحالية.",
+  "restoreFeatureComingSoon": "ميزة الاستعادة قيد التطوير",
+
+  "minutesFormat": "{minutes} دقيقة",
+  "@minutesFormat": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "oneHour": "ساعة واحدة",
+  "hoursFormat": "{hours} ساعات",
+  "@hoursFormat": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "oneDay": "يوم واحد",
+
+  "statisticsTitle": "إحصائيات الإنجاز",
+  "statisticsSubtitle": "نظرة عامة",
+  "statisticsOverviewSubtitle": "Achievement Overview",
+  "completionRateLabel": "نسبة الإنجاز",
+
+  "quickStatsTotalTasks": "إجمالي المهام",
+  "quickStatsCompletedTasks": "مكتملة",
+  "quickStatsPendingTasks": "قيد التنفيذ",
+  "quickStatsArchivedTasks": "مؤرشفة",
+
+  "weeklyProductivityTitle": "الإنتاجية الأسبوعية",
+  "achievementBadgesTitle": "أوسمة الإنجاز",
+  "badgeFirstTask": "المهمة الأولى",
+  "badgeFirstTaskDesc": "أكملت أول مهمة بنجاح",
+  "badgeFiveTasks": "بداية قوية",
+  "badgeFiveTasksDesc": "أكملت 5 مهام",
+  "badgeTenTasks": "بطل الإنتاجية",
+  "badgeTenTasksDesc": "أكملت 10 مهام",
+
+  "archiveSummaryTitle": "ملخص الأرشيف",
+  "archiveSummaryOverdueOnly": "متأخرة > 30 يوم",
+  "archiveSummaryCompleted": "مكتملة ومؤرشفة",
+  "archiveSummaryTotal": "إجمالي الأرشيف",
+
+  "voiceInputTitle": "الإدخال الصوتي والتحليل الذكي",
+  "voiceInputHint": "انقر الميكروفون للتحدث بأمر صوتي",
+
+  "errorGeneral": "حدث خطأ. يرجى المحاولة مرة أخرى.",
+  "errorInitApp": "فشل في تهيئة التطبيق",
+
+  "subtasksTitle": "المهام الفرعية",
+  "subtasksSubtitle": "قائمة الخطوات لإنجاز المهمة",
+  "addSubtaskHint": "أضف خطوة جديدة...",
+  "subtasksProgress": "{completed} من {total} مكتملة",
+  "@subtasksProgress": {
+    "placeholders": {
+      "completed": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "recurrenceTitle": "تكرار المهمة",
+  "recurrenceNone": "بدون تكرار",
+  "recurrenceDaily": "يومياً",
+  "recurrenceWeekly": "أسبوعياً",
+  "recurrenceMonthly": "شهرياً",
+  "recurrenceCustom": "مخصص",
+  "recurringBadge": "متكررة",
+
+  "snooze15Mins": "تأجيل 15 دقيقة",
+  "snoozeTomorrow": "تأجيل لصباح الغد",
+  "actionComplete": "إكمال المهمة"
+}

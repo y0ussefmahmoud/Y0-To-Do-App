@@ -2,209 +2,166 @@
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.24.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.5.x-0175C2?logo=dart&logoColor=white)
-![Version](https://img.shields.io/badge/Version-3.2.8-66BB6A)
-![Tests](https://img.shields.io/badge/Tests-16%2F16%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)
+![Version](https://img.shields.io/badge/Version-3.3.0-66BB6A)
+![Tests](https://img.shields.io/badge/Tests-38%2F38%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)
 ![Analyzer](https://img.shields.io/badge/analyzer-0%20errors-brightgreen)
 
-## نظرة عامة
-Y0 To-Do App هو تطبيق إدارة مهام ذكي باللغة العربية أولاً، مع اقتراحات مدعومة بالذكاء الاصطناعي، وإدخال صوتي باللغة العربية، وتصفية متقدمة. يجمع بين واجهة عصرية وإدارة حالة Riverpod والتخزين المحلي باستخدام Hive لسرعة وأداء بدون اتصال.
+## 📌 نظرة عامة
+**Y0 To-Do App** هو تطبيق متقدم ومبسط لإدارة المهام وتوثيقها وترتيب أولوياتها (الأهم ثم المهم)، مصمم بالكامل بنمط **Neo-morphic UI** العصري.
+يتميز التطبيق بدعم كامل للغتين العربية والإنجليزية مع توجيه ديناميكي للواجهة (RTL/LTR)، تشفير محلي قوي للبيانات بـ **AES-256**، اقتراحات ذكية مدعومة بالذكاء الاصطناعي، إدخال صوتي متطور، ونظام أرشفة تلقائي ذكي.
 
 ---
 
-## الجديد في الإصدار v3.2.8 (أحدث)
+## 🚀 الجديد في الإصدار v3.3.0 (أحدث إصدار)
 
-### 🗂️ منطق الأرشيف التلقائي (Archive Logic)
-- **شروط الأرشفة التلقائية**: تنتقل المهمة تلقائياً إلى الأرشيف إذا:
-  - كانت **مكتملة** (`isDone == true`)، أو
-  - **مرّ على موعد استحقاقها أكثر من 30 يوماً**.
-- **`task.isArchived` getter**: خاصية محسوبة آمنة ودقيقة على مستوى النموذج.
-- **كارت ملخص الأرشيف (`ArchiveSummaryCard`)**: عنصر جديد في شاشة الإحصائيات يعرض تفكيكاً مرئياً واضحاً لـ:
-  - 🟢 **المهام النشطة الجارية** (غير المؤرشفة).
-  - 🟠 **المهام القديمة** (تجاوزت 30 يوماً).
-  - 🔵 **المهام المكتملة**.
-- **زر فلتر الأرشيف** في القائمة السريعة بالصفحة الرئيسية لعرض المهام المؤرشفة مباشرة.
+### 🌐 1. التعريب والتوطين الشامل (100% Full Localization & Dynamic RTL/LTR)
+- **دعم كامل للغتين العربية والإنجليزية**: شمولية كاملة لكافة الشاشات، القوائم، الكروت، مربعات الحوار، الفلاتر، والتصنيفات عبر ملفات `app_ar.arb` و `app_en.arb`.
+- **توجيه ديناميكي متكيف (Dynamic Directionality)**: التبديل السلس بين اتجاه الكتابة وتخطيط الواجهة من اليمين لليسار (RTL) للعربية ومن اليسار لليمين (LTR) للإنجليزية بدون أي فرض قسري للاتجاهات.
+- **تنسيق التواريخ والأوقات ديناميكياً**: عرض التواريخ والأيام وأسماء الأسبوع حسب اللغة المحددة.
 
-### 📊 تحسين منطق الإحصائيات
-- **`QuickStatsCards`**: إصلاح القيم لعرض المهام المكتملة نسبةً للإجمالي مع نسبة مئوية حية ودقيقة.
-- **`EditorialHeroHeader`**: رسالة تحفيزية ديناميكية متكيفة مع نسبة الإنجاز (0% → 100%).
-- **`WeeklyProductivityChart`**: إصلاح حساب أيام الأسبوع بدءاً من الأحد بدقة.
+### 🔒 2. التشفير المحلي الآمن للبيانات (AES-256 Encryption & Safe Migration)
+- **تشفير صناديق Hive بـ AES-256**: حماية بيانات المستخدمين المخزنة محلياً باستخدام مفاتيح مشفرة ومحفوظة في `flutter_secure_storage`.
+- **ترحيل آمن في الذاكرة (In-Memory Safe Migration)**: نقل البيانات القديمة وتشفيرها دون فقدان أي بيانات، مع إنشاء نسخة احتياطية في الذاكرة وضمان عدم الحذف إلا بعد اكتمال الكتابة بنجاح.
+- **توافق عكسي صارم**: الحفاظ على فهارس `@HiveField` وقيم افتراضية آمنة ضد الحقول الفارغة (Null-Safe Deserialization).
 
-### 🏗️ إعادة هيكلة وتحسين الأداء
-- 🧩 **تقسيم الملفات الضخمة**: تقسيم `home_screen_neomorphic.dart` (1322 سطر) إلى 7 مكونات مستقلة في `lib/screens/home/`.
-- 🧩 **نمذجة شاشتي الإحصائيات والإعدادات**: مكونات صغيرة وقابلة للصيانة في `lib/widgets/statistics/` و `lib/widgets/settings/`.
-- ⚡ **Lazy Building**: قوائم `SliverList.builder` بدون `shrinkWrap` لرفع سلاسة الأداء.
-- 🎯 **Memoized State**: `taskCountsProvider` لمنع تكرار عمليات الفلترة في الـ Build Loop.
-- 🔍 **Riverpod `.select()`**: حصر تحديث الـ widgets فقط على الجزء المتغير فعلياً.
+### 🗂️ 3. ترتيب المهام بالسحب والإفلات (Drag-and-Drop Reordering)
+- **خاصية `sortOrder`**: حفظ موضع وترتيب المهام في قاعدة البيانات.
+- **`SliverReorderableList`**: إمكانية ترتيب المهام يدوياً بالسحب والإفلات مع تأثيرات حركية وظلال عائمة سلسة لترتيب الأولويات (الأهم فالمهم).
 
-### 🐛 إصلاحات منطقية وبصرية
-- إصلاح خطأ `RenderFlex overflowed` في جميع الأماكن (تم تطبيق `FittedBox` و`Flexible` و`Expanded` و`maxLines`).
-- إصلاح إضافة المهام الجديدة في `_showAddTaskDialog`.
-- تصحيح رسائل حالة Toggle، ونمط Sentinel في `task.copyWith()`، وإصدار UUID للمهام الصوتية.
-- 👨‍💻 **توثيق المطور**: إضافة حقوق ملكية مطور التطبيق في جميع ملفات `.dart`.
+### 🗄️ 4. منطق الأرشفة التلقائي المطور (Archive Criteria & Home View)
+- **معيار الأرشفة الموحد**: تعتبر المهمة مؤرشفة تلقائياً إذا كانت:
+  1. مكتملة (`isDone == true`).
+  2. أو متأخرة عن موعد استحقاقها بأكثر من 30 يوماً (`DateTime.now().difference(dueDate).inDays > 30`).
+- **فصل الشاشة الرئيسية**: تعرض الشاشة الرئيسية حصرياً المهام النشطة المعلقة (`!t.isDone && !t.isArchived`).
+- **فلتر وملخص الأرشيف**: إمكانية استعراض المهام المؤرشفة عبر فلتر الأرشيف في الصفحة الرئيسية وكارت ملخص الأرشيف في شاشة الإحصائيات.
 
-### ✅ نتائج الفحص والاختبارات
-```
-flutter analyze lib  →  0 errors (6 deprecated Radio info فقط)
-flutter test         →  16/16 All tests passed!
-```
+### 🧪 5. جودة واختبارات برمجية شاملة (Quality & Automated Tests)
+- **32 اختبار آلي ناجح بنسبة 100%**: تغطية نماذج البيانات، منطق الأرشيف، التشفير، ترتيب المهام، واللغات والتعريب.
+- **تحليل كود خالي من الأخطاء**: `flutter analyze lib` ينتهي بـ **0 errors / 0 warnings**.
 
 ---
 
-## الجديد في الإصدار v3.2.6
-- 💾 **ميزة النسخ الاحتياطي**: آلية تصدير واستعادة البيانات (Backup & Restore)
-- 📤 **تصدير البيانات**: تصدير جميع بيانات التطبيق (المهام، الإعدادات، سجل البحث) إلى ملف JSON
-- 📥 **استعادة البيانات**: استيراد البيانات من ملف النسخ الاحتياطي
-- 📤 **مشاركة النسخ الاحتياطي**: عبر share_plus (WhatsApp, Email, Google Drive, إلخ)
-- 🗂️ **تحسين النماذج**: إضافة `toJson`/`fromJson` لـ Task و SearchHistory
-- 🧹 **تنظيف المشروع**: إزالة الملفات غير المفيدة
-
----
-
-## المميزات الكاملة
+## 🌟 المميزات الرئيسية
 
 | الميزة | الوصف |
 |---|---|
-| 🎨 **تصميم Neo-morphic** | واجهة حديثة مع تأثيرات 3D وظلال واقعية |
-| 🗂️ **أرشيف تلقائي** | أرشفة تلقائية للمهام المكتملة أو القديمة (>30 يوم) |
-| 📊 **إحصائيات متكاملة** | رسوم بيانية تفاعلية وتحليلات مفصّلة للأداء |
-| 🌙 **وضع ليلي مخصص** | ألوان متكيفة مع أفضل تجربة مستخدم |
-| 🤖 **ذكاء اصطناعي** | تحليل المهام، اقتراح الأولوية والتصنيف والموعد |
-| 🎤 **إدخال صوتي** | دعم كامل للغة العربية |
-| 🔍 **فلاتر متقدمة** | الحالة، الأولوية، التصنيف، التاريخ، الأرشيف |
-| 🔎 **بحث ذكي** | بحث فوري مع سجل وتصفية آنية |
-| 🔔 **إشعارات محلية** | تعمل حتى لو التطبيق مقفول |
-| 💾 **نسخ احتياطي** | تصدير واستيراد البيانات عبر JSON |
-| ⚡ **أداء مُحسَّن** | Lazy Building + Riverpod `.select()` + Memoized Counts |
-| 📱 **توافق شامل** | Android 5.0+ بما فيها Samsung Galaxy |
+| 🌐 **توطين ثنائي اللغة (AR / EN)** | دعم كامل للغتين العربية والإنجليزية مع اتجاه ديناميكي RTL/LTR |
+| 🎨 **تصميم Neo-morphic** | واجهة مستخدم فائقة الجمال بظلال ثلاثية الأبعاد واقعية |
+| 🔒 **أمان وتشفير AES-256** | تشفير قاعدة البيانات المحلية وقفل التطبيق بالبصمة |
+| 🗂️ **ترتيب الأولويات بالسحب** | إمكانية سحب وإفلات المهام لإعادة ترتيبها حسب الأهمية |
+| 🗄️ **أرشفة تلقائية ذكية** | عزل المهام المنجزة أو المتأخرة لأكثر من شهر في الأرشيف |
+| 📊 **إحصائيات ورسوم بيانية** | لوحة تحليلات أسبوعية ورسوم بيانية لنسبة الإنجاز وأوسمة تحفيزية |
+| 🤖 **ذكاء اصطناعي محلي** | تحليل نص المهمة واقتراح التصنيف والأولوية والموعد تلقائياً |
+| 🎤 **إدخال صوتي ذكي** | تسجيل المهام بالأوامر الصوتية وتحويلها إلى مهام مباشرة |
+| 🔍 **فلاتر وبحث فوري** | تصفية حسب التاريخ، الأولوية، التصنيف، الحالة، وسجل بحث متكامل |
+| 🔔 **إشعارات ومواعيد دقيقة** | تذكير بالمهام والمواعيد الدقيقة محلياً بدون إنترنت |
+| 💾 **نسخ احتياطي واستعادة** | تصدير واستيراد بيانات التطبيق بصيغة JSON ومشاركتها |
 
 ---
 
-## Tech Stack
+## 🛠️ التقنيات المستخدمة (Tech Stack)
 
-| Layer | Technology |
+| الطبقة | التقنية المستخدمة |
 |---|---|
-| UI | Flutter (Material 3 + Neo-morphic Design) |
-| State | Riverpod (+ `.select()` & memoized providers) |
-| Storage | Hive |
-| Voice | Speech-to-Text / TTS |
-| Charts | fl_chart |
-| Animations | flutter_animate + Lottie |
-| Navigation | Named Routes + Material Router |
+| **الإطار البرمجي** | Flutter 3.24.x / Dart 3.5.x |
+| **إدارة الحالة** | Flutter Riverpod 2.6.x (مع `.select()` و Provider Memoization) |
+| **قاعدة البيانات والتخزين** | Hive 2.x (مشفرة بـ AES-256) |
+| **التخزين الآمن للمفاتيح** | `flutter_secure_storage` |
+| **التوطين واللغات** | `flutter_localizations` + ARB Templates |
+| **الرسوم البيانية والحركات** | `fl_chart` + `flutter_animate` |
+| **التعرف الصوتي** | `speech_to_text` + `flutter_tts` |
 
 ---
 
-## Architecture
+## 📂 بنية المشروع (Project Structure)
 
 ```
 lib/
-├── main.dart
-├── models/
-│   ├── task.dart              # Task model + isArchived getter
-│   ├── task_filter.dart
-│   └── task_category.dart
-├── providers/
-│   ├── task_provider.dart     # tasksProvider + taskCountsProvider
-│   └── settings_provider.dart
-├── screens/
-│   ├── home/
+├── main.dart                      # تهيئة التطبيق والتشفير الآمن والـ Localization
+├── l10n/                          # ملفات اللغات والتوطين
+│   ├── app_ar.arb                 # القاموس العربي
+│   ├── app_en.arb                 # القاموس الإنجليزي
+│   └── l10n_extension.dart        # مساعد context.l10n
+├── models/                        # نماذج البيانات
+│   ├── task.dart                  # نموذج المهمة + sortOrder + isArchived
+│   ├── task_category.dart         # التصنيفات مع الترجمة التلقائية
+│   ├── task_filter.dart           # خيارات الفلترة وحالات المهام
+│   └── search_history.dart        # سجل البحث
+├── providers/                     # مزودات الحالة (Riverpod)
+│   ├── task_provider.dart         # مزودات المهام والأرشيف وإعادة الترتيب
+│   ├── settings_provider.dart     # مزودات الإعدادات واللغة والمظهر
+│   └── search_provider.dart       # مزودات البحث
+├── screens/                       # شاشات التطبيق الرئيسية
+│   ├── home/                      # الشاشة الرئيسية ومكوناتها
 │   │   ├── home_screen.dart
 │   │   └── widgets/
 │   │       ├── greeting_card.dart
 │   │       ├── progress_card.dart
 │   │       ├── search_section.dart
 │   │       ├── quick_filters.dart
-│   │       ├── task_list_widget.dart
+│   │       ├── task_list_widget.dart      # قائمة المهام مع السحب والإفلات
 │   │       └── task_card_widget.dart
-│   ├── statistics_screen.dart
-│   ├── settings_screen.dart
-│   └── add_edit_task_screen.dart
-├── widgets/
-│   ├── statistics/
-│   │   ├── editorial_hero_header.dart
-│   │   ├── quick_stats_cards.dart
-│   │   ├── weekly_productivity_chart.dart
-│   │   ├── achievement_badges.dart
-│   │   └── archive_summary_card.dart   # NEW in v3.2.8
-│   └── settings/
-│       ├── language_selector.dart
-│       ├── notification_time_selector.dart
-│       └── name_edit_dialog.dart
-├── services/
-│   ├── ai_service.dart
-│   ├── task_service.dart
-│   └── notification_service.dart
+│   ├── statistics_screen.dart     # شاشة الإحصائيات
+│   ├── settings_screen.dart       # شاشة الإعدادات
+│   ├── search_history_screen.dart # شاشة سجل البحث
+│   └── add_edit_task_screen.dart  # شاشة إنشاء وتعديل المهام
+├── services/                      # الخدمات ومساعدات النظام
+│   ├── encryption_service.dart    # توليد وإدارة مفاتيح AES-256
+│   ├── ai_service.dart            # التحليل الذكي للنصوص
+│   ├── task_service.dart          # عمليات إدارة المهام
+│   ├── notification_service.dart  # خدمة الإشعارات المحلية
+│   └── backup_service.dart        # النسخ الاحتياطي والتصدير
+├── widgets/                       # عناصر واجهة المستخدم المشتركة
+│   ├── bottom_navigation.dart     # شريط التنقل السفلي المطور
+│   ├── neo_morphic_card.dart      # كارت Neo-morphic
+│   ├── statistics/                # عناصر شاشة الإحصائيات
+│   └── settings/                  # عناصر شاشة الإعدادات
 └── theme/
-    └── y0_design_system.dart
+    └── y0_design_system.dart      # نظام الألوان والمسافات والظلال
 ```
 
 ---
 
-## Setup
+## ⚡ التشغيل والتطوير (Setup & Running)
 
 ```bash
-# تثبيت المتطلبات
+# 1. تثبيت الحزم والمكتبات
 flutter pub get
+
+# 2. توليد ملفات Hive و Localization
+flutter gen-l10n
 flutter pub run build_runner build --delete-conflicting-outputs
 
-# تشغيل التطبيق
-flutter run
-
-# تشغيل الاختبارات
+# 3. تشغيل الاختبارات الآلية
 flutter test
 
-# فحص جودة الكود
+# 4. فحص جودة الكود
 flutter analyze lib
+
+# 5. تشغيل التطبيق
+flutter run
 ```
 
 ---
 
-## Quality Metrics
+## 📊 مؤشرات الجودة (Quality Metrics)
 
-| Metric | Result |
+| المعيار | النتيجة |
 |---|---|
-| Unit Tests | ✅ 16/16 passing |
-| Analyzer Errors | ✅ 0 errors |
-| Analyzer Warnings | ⚠️ 6 info (deprecated Radio API) |
-| Test Coverage | ✅ ≥ 85% |
+| **الاختبارات الآلية (Unit & Widget Tests)** | ✅ **38/38 اختبار ناجح بنسبة 100%** |
+| **أخطاء المحلل (Analyzer Errors)** | ✅ **0 Errors** |
+| **تحذيرات المحلل (Analyzer Warnings)** | ✅ **0 Warnings** |
+| **تغطية اللغات (Localization Coverage)** | ✅ **100% (العربية والإنجليزية)** |
+| **تشفير قاعدة البيانات** | ✅ **AES-256 مشفر بالكامل** |
 
 ---
 
-## استكشاف الأخطاء وإصلاحها
-
-### 1. التطبيق لا يعمل على الهاتف الحقيقي
-**الحل:** امسح بيانات التطبيق القديمة قبل الترقية، أو أعد التثبيت من الصفر.
-
-### 2. الإشعارات لا تعمل على Samsung Galaxy
-**الحل:**
-- الإعدادات → البطارية → استخدام البطارية → Y0 To-Do App → "عدم تقييد"
-- الإعدادات → التطبيقات → Y0 To-Do App → البطارية → "غير مقيد"
-- الإعدادات → التطبيقات → خاصة → إذن الدقة العالية → فعّل للتطبيق
-
-### 3. الميكروفون لا يعمل
-**الحل:**
-- الإعدادات → التطبيقات → Y0 To-Do App → الصلاحيات → فعّل "الميكروفون"
-
-### 4. خطأ في البناء (Daemon compilation failed)
-**الحل:** تأكد أن `JAVA_HOME` يشير لـ Java 17 أو أعلى.
-
-### 5. RenderFlex overflow في الإحصائيات
-**الحل:** تم حل هذه المشكلة بالكامل في v3.2.8 عبر `FittedBox` و`Flexible`.
-
----
-
-## المتطلبات التقنية
-- Android 5.0 (API 21) أو أعلى
-- 50MB مساحة تخزين
-- صلاحيات: الإشعارات، الميكروفون، التخزين
-
----
-
-## المطور
+## 👨‍💻 مطور التطبيق
 
 | | |
 |---|---|
-| 👨‍💻 **المطور** | م / يوسف محمود عبد الجواد |
-| 🌐 **الموقع** | [y0ussef.com](https://y0ussef.com/) |
-| 💬 **واتساب** | [wa.me/201129334173](https://wa.me/201129334173) |
-| 📧 **البريد** | [info@Y0ussef.com](mailto:info@Y0ussef.com) |
+| 👨‍💻 **المطور** | **م / يوسف محمود عبد الجواد** (Eng / Youssef Mahmoud Abdelgawad) |
+| 🌐 **الموقع الرسمي** | [y0ussef.com](https://y0ussef.com/) |
+| 💬 **واتساب** | [+201129334173](https://wa.me/201129334173) |
+| 📧 **البريد الإلكتروني** | [info@Y0ussef.com](mailto:info@Y0ussef.com) |

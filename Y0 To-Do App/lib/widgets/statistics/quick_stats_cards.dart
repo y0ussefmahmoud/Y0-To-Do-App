@@ -6,6 +6,7 @@
 // - Email: info@Y0ussef.com
 
 import 'package:flutter/material.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../theme/y0_design_system.dart';
 import '../../widgets/neo_morphic_card.dart';
 import '../../models/task.dart';
@@ -41,7 +42,6 @@ class QuickStatsCards extends StatelessWidget {
       padding: const EdgeInsets.all(Y0DesignSystem.spacing3),
       color: isDark ? const Color(0xFF1E1E1E) : null,
       child: Row(
-        textDirection: TextDirection.rtl,
         children: [
           if (showProgress && percentage != null)
             SizedBox(
@@ -99,7 +99,7 @@ class QuickStatsCards extends StatelessWidget {
           const SizedBox(width: Y0DesignSystem.spacing3),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
@@ -112,7 +112,7 @@ class QuickStatsCards extends StatelessWidget {
                 const SizedBox(height: Y0DesignSystem.spacing2 / 2),
                 FittedBox(
                   fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
+                  alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     value,
                     style: context.textTheme.headlineSmall?.copyWith(
@@ -141,8 +141,8 @@ class QuickStatsCards extends StatelessWidget {
       children: [
         _buildQuickStatCard(
           context,
-          'المهام المكتملة',
-          '$completedTasks من $totalTasks مهمة',
+          context.l10n.quickStatsCompletedTasks,
+          context.l10n.completedOutOfTotal(completedTasks, totalTasks),
           '$completionRate%',
           Icons.check_circle_outline,
           true,
@@ -150,8 +150,8 @@ class QuickStatsCards extends StatelessWidget {
         const SizedBox(height: Y0DesignSystem.spacing3),
         _buildQuickStatCard(
           context,
-          'الأهداف النشطة الجارية',
-          '$activeCount هدف نشط',
+          context.l10n.quickStatsPendingTasks,
+          '$activeCount',
           null,
           Icons.flag,
           false,
@@ -159,19 +159,10 @@ class QuickStatsCards extends StatelessWidget {
         const SizedBox(height: Y0DesignSystem.spacing3),
         _buildQuickStatCard(
           context,
-          'إجمالي الأرشيف',
-          '$archivedCount مهمة مؤرشفة',
+          context.l10n.quickStatsArchivedTasks,
+          '$archivedCount',
           null,
           Icons.archive,
-          false,
-        ),
-        const SizedBox(height: Y0DesignSystem.spacing3),
-        _buildQuickStatCard(
-          context,
-          'وقت التركيز المستثمر',
-          '${(completedTasks * 0.5).toStringAsFixed(1)} ساعة',
-          null,
-          Icons.schedule,
           false,
         ),
       ],

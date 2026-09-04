@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/l10n_extension.dart';
 import '../theme/y0_design_system.dart';
 import '../widgets/bottom_navigation.dart';
 import '../providers/task_provider.dart';
@@ -17,10 +18,6 @@ import '../widgets/statistics/achievement_badges.dart';
 import '../widgets/statistics/archive_summary_card.dart';
 
 /// 📊 Y0 To-Do App - Statistics Screen
-/// 
-/// شاشة الإحصائيات المبسطة بالتصميم Neo-morphic
-/// 
-
 class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
 
@@ -33,53 +30,49 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final tasks = ref.watch(tasksProvider);
-    final completedTasks = tasks.where((task) => task.isDone).length;
-    final totalTasks = tasks.length;
-    final completionRate = totalTasks > 0 ? (completedTasks / totalTasks * 100).round() : 0;
+    final counts = ref.watch(taskCountsProvider);
+    final todayProgressPercent = counts.todayProgressPercent;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : context.colorScheme.surface,
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Y0DesignSystem.spacing3),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // Top App Bar
-              _buildTopAppBar(context, isDark),
-              
-              const SizedBox(height: Y0DesignSystem.spacing4),
-              
-              // Editorial Hero Header
-              EditorialHeroHeader(completionRate: completionRate, isDark: isDark),
-              
-              const SizedBox(height: Y0DesignSystem.spacing4),
-              
-              // Quick Stats Cards
-              QuickStatsCards(tasks: tasks, isDark: isDark),
-              
-              const SizedBox(height: Y0DesignSystem.spacing4),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(Y0DesignSystem.spacing3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top App Bar
+            _buildTopAppBar(context, isDark),
+            
+            const SizedBox(height: Y0DesignSystem.spacing4),
+            
+            // Editorial Hero Header (Today's Progress Rate)
+            EditorialHeroHeader(completionRate: todayProgressPercent, isDark: isDark),
+            
+            const SizedBox(height: Y0DesignSystem.spacing4),
+            
+            // Quick Stats Cards
+            QuickStatsCards(tasks: tasks, isDark: isDark),
+            
+            const SizedBox(height: Y0DesignSystem.spacing4),
 
-              // Archive Summary Card
-              ArchiveSummaryCard(tasks: tasks, isDark: isDark),
-              
-              const SizedBox(height: Y0DesignSystem.spacing4),
-              
-              // Weekly Chart Card
-              WeeklyProductivityChart(tasks: tasks, isDark: isDark),
-              
-              const SizedBox(height: Y0DesignSystem.spacing4),
-              
-              // Achievement Badges Section
-              AchievementBadges(completedTasks: completedTasks, isDark: isDark),
-              
-              const SizedBox(height: Y0DesignSystem.spacing4),
-              
-              // Bottom padding for navigation
-              const SizedBox(height: 160),
-            ],
-          ),
+            // Archive Summary Card
+            ArchiveSummaryCard(tasks: tasks, isDark: isDark),
+            
+            const SizedBox(height: Y0DesignSystem.spacing4),
+            
+            // Weekly Chart Card
+            WeeklyProductivityChart(tasks: tasks, isDark: isDark),
+            
+            const SizedBox(height: Y0DesignSystem.spacing4),
+            
+            // Achievement Badges Section
+            AchievementBadges(completedTasks: counts.completed, isDark: isDark),
+            
+            const SizedBox(height: Y0DesignSystem.spacing4),
+            
+            // Bottom padding for navigation
+            const SizedBox(height: 160),
+          ],
         ),
       ),
       
@@ -91,7 +84,6 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     );
   }
 
-  /// 📱 Top App Bar
   Widget _buildTopAppBar(BuildContext context, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -102,7 +94,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'Y0 To-Do',
+            context.l10n.appTitle,
             style: context.textTheme.headlineSmall?.copyWith(
               color: isDark 
                   ? const Color(0xFF66bb6a)

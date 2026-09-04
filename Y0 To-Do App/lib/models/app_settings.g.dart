@@ -1,10 +1,3 @@
-// Developed by:
-// - Arabic: م / يوسف محمود عبد الجواد
-// - English: Eng / Youssef Mahmoud Abdelgawad
-// - Business Website: https://y0ussef.com/
-// - Whatsapp: https://wa.me/201129334173
-// - Email: info@Y0ussef.com
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'app_settings.dart';
@@ -34,13 +27,14 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       notificationMinutesBefore: fields[7] as int,
       exactTimeNotificationsEnabled: fields[8] as bool,
       userName: fields[9] as String,
+      appLockEnabled: fields[10] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, AppSettings obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.themeMode)
       ..writeByte(1)
@@ -60,7 +54,9 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       ..writeByte(8)
       ..write(obj.exactTimeNotificationsEnabled)
       ..writeByte(9)
-      ..write(obj.userName);
+      ..write(obj.userName)
+      ..writeByte(10)
+      ..write(obj.appLockEnabled);
   }
 
   @override

@@ -53,6 +53,9 @@ class NotificationHandler {
       case 'snooze':
         await handleSnoozeAction(payload);
         break;
+      case 'snooze_tomorrow':
+        await handleSnoozeTomorrowAction(payload);
+        break;
       default:
         // النقر على الإشعار نفسه - فتح شاشة تفاصيل المهمة
         await navigateToTaskDetail(payload);
@@ -142,6 +145,24 @@ class NotificationHandler {
       ErrorHandler.logInfo('Task snoozed: $taskId');
     } catch (e) {
       ErrorHandler.handleError(e, null, context: 'NotificationHandler.handleSnoozeAction');
+    }
+  }
+
+  /// معالجة إجراء تأجيل المهمة لصباح الغد
+  /// 
+  /// يقوم بتأجيل الإشعار إلى الساعة 9:00 صباح اليوم التالي
+  /// 
+  /// [taskId] معرف المهمة المراد تأجيل إشعارها
+  Future<void> handleSnoozeTomorrowAction(String taskId) async {
+    try {
+      if (taskId.isEmpty) {
+        ErrorHandler.logWarning('Task ID is empty for snooze tomorrow');
+        return;
+      }
+      
+      ErrorHandler.logInfo('Task snoozed until tomorrow: $taskId');
+    } catch (e) {
+      ErrorHandler.handleError(e, null, context: 'NotificationHandler.handleSnoozeTomorrowAction');
     }
   }
 

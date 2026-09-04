@@ -1,10 +1,3 @@
-// Developed by:
-// - Arabic: م / يوسف محمود عبد الجواد
-// - English: Eng / Youssef Mahmoud Abdelgawad
-// - Business Website: https://y0ussef.com/
-// - Whatsapp: https://wa.me/201129334173
-// - Email: info@Y0ussef.com
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'task.dart';
@@ -31,13 +24,18 @@ class TaskAdapter extends TypeAdapter<Task> {
       priority: fields[4] as int,
       isDone: fields[5] as bool,
       category: fields[6] as TaskCategory?,
+      sortOrder: fields[7] as int? ?? 0,
+      recurrenceRule: fields[8] as RecurrenceRule?,
+      subtasks: (fields[9] as List?)?.cast<SubTask>() ?? const [],
+      tags: (fields[10] as List?)?.cast<String>() ?? const [],
+      completedAt: fields[13] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Task obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -51,7 +49,17 @@ class TaskAdapter extends TypeAdapter<Task> {
       ..writeByte(5)
       ..write(obj.isDone)
       ..writeByte(6)
-      ..write(obj.category);
+      ..write(obj.category)
+      ..writeByte(7)
+      ..write(obj.sortOrder)
+      ..writeByte(8)
+      ..write(obj.recurrenceRule)
+      ..writeByte(9)
+      ..write(obj.subtasks)
+      ..writeByte(10)
+      ..write(obj.tags)
+      ..writeByte(13)
+      ..write(obj.completedAt);
   }
 
   @override

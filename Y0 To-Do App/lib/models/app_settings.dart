@@ -41,6 +41,12 @@ class AppSettings {
   @HiveField(9)
   final String userName; // اسم المستخدم
 
+  /// قفل التطبيق بالبصمة أو الرمز (App Lock)
+  /// 
+  /// قيمة افتراضية: false (للبيانات القديمة التي لا تحتوي على هذا الحقل)
+  @HiveField(10)
+  final bool appLockEnabled;
+
   const AppSettings({
     this.themeMode = 'system',
     this.language = 'ar',
@@ -52,6 +58,7 @@ class AppSettings {
     this.notificationMinutesBefore = 60,
     this.exactTimeNotificationsEnabled = false,
     this.userName = 'أحمد',
+    this.appLockEnabled = false,
   });
 
   AppSettings copyWith({
@@ -65,6 +72,7 @@ class AppSettings {
     int? notificationMinutesBefore,
     bool? exactTimeNotificationsEnabled,
     String? userName,
+    bool? appLockEnabled,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -77,6 +85,7 @@ class AppSettings {
       notificationMinutesBefore: notificationMinutesBefore ?? this.notificationMinutesBefore,
       exactTimeNotificationsEnabled: exactTimeNotificationsEnabled ?? this.exactTimeNotificationsEnabled,
       userName: userName ?? this.userName,
+      appLockEnabled: appLockEnabled ?? this.appLockEnabled,
     );
   }
 
@@ -92,6 +101,7 @@ class AppSettings {
       'notificationMinutesBefore': notificationMinutesBefore,
       'exactTimeNotificationsEnabled': exactTimeNotificationsEnabled,
       'userName': userName,
+      'appLockEnabled': appLockEnabled,
     };
   }
 
@@ -107,6 +117,8 @@ class AppSettings {
       notificationMinutesBefore: map['notificationMinutesBefore'] as int? ?? 60,
       exactTimeNotificationsEnabled: map['exactTimeNotificationsEnabled'] as bool? ?? false,
       userName: map['userName'] as String? ?? 'أحمد',
+      // Backward-compatible: old records without appLockEnabled default to false
+      appLockEnabled: map['appLockEnabled'] as bool? ?? false,
     );
   }
 
@@ -123,7 +135,8 @@ class AppSettings {
         other.speechPitch == speechPitch &&
         other.notificationMinutesBefore == notificationMinutesBefore &&
         other.exactTimeNotificationsEnabled == exactTimeNotificationsEnabled &&
-        other.userName == userName;
+        other.userName == userName &&
+        other.appLockEnabled == appLockEnabled;
   }
 
   @override
@@ -137,6 +150,7 @@ class AppSettings {
         speechPitch.hashCode ^
         notificationMinutesBefore.hashCode ^
         exactTimeNotificationsEnabled.hashCode ^
-        userName.hashCode;
+        userName.hashCode ^
+        appLockEnabled.hashCode;
   }
 }

@@ -82,8 +82,13 @@ class NotificationScheduler {
               ),
               AndroidNotificationAction(
                 'snooze',
-                'تأجيل',
+                'تأجيل (15 د)',
                 titleColor: Color(0xFF6366F1),
+              ),
+              AndroidNotificationAction(
+                'snooze_tomorrow',
+                'صباح الغد',
+                titleColor: Color(0xFFFF9800),
               ),
             ],
           ),
@@ -153,8 +158,13 @@ class NotificationScheduler {
               ),
               AndroidNotificationAction(
                 'snooze',
-                'تأجيل',
+                'تأجيل (15 د)',
                 titleColor: Color(0xFF6366F1),
+              ),
+              AndroidNotificationAction(
+                'snooze_tomorrow',
+                'صباح الغد',
+                titleColor: Color(0xFFFF9800),
               ),
             ],
           ),
@@ -284,6 +294,49 @@ class NotificationScheduler {
       ErrorHandler.logSuccess('Notification snoozed for task: $taskId');
     } catch (e) {
       ErrorHandler.handleError(e, null, context: 'NotificationScheduler.snoozeNotification');
+    }
+  }
+
+  /// تأجيل الإشعار إلى صباح الغد (الساعة 9:00 صباحاً)
+  /// 
+  /// [taskId] معرف المهمة
+  Future<void> snoozeTomorrowNotification(String taskId) async {
+    if (!_isInitialized) return;
+
+    try {
+      final now = DateTime.now();
+      final tomorrowNineAm = DateTime(now.year, now.month, now.day + 1, 9, 0);
+
+      await _plugin.zonedSchedule(
+        ((taskId.hashCode + 1500) & 0x7FFFFFFF),
+        'تذكير مؤجل للغد',
+        'تم تأجيل هذا الإشعار إلى صباح الغد (9:00 ص)',
+        tz.TZDateTime.from(tomorrowNineAm, tz.local),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'tasks_channel',
+            'إشعارات المهام',
+            channelDescription: 'إشعارات للمهام القريبة من موعدها',
+            importance: Importance.high,
+            priority: Priority.high,
+            enableVibration: true,
+            playSound: true,
+            icon: null,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        payload: taskId,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+
+      ErrorHandler.logSuccess('Notification snoozed until tomorrow 9AM for task: $taskId');
+    } catch (e) {
+      ErrorHandler.handleError(e, null, context: 'NotificationScheduler.snoozeTomorrowNotification');
     }
   }
 

@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task.dart';
 import '../models/task_category.dart';
 import '../services/ai_service.dart';
+import '../utils/date_utils.dart';
 import 'task_provider.dart';
 import 'ai_provider.dart';
 
@@ -41,17 +42,29 @@ class StatisticsState {
   /// توزيع المهام حسب الأولوية (0: منخفضة، 1: متوسطة، 2: عالية)
   final Map<int, int> priorityDistribution;
   
-  /// إجمالي عدد المهام
+  /// إجمالي عدد المهام العام
   final int totalTasks;
   
-  /// عدد المهام المكتملة
+  /// عدد المهام المكتملة العام
   final int completedTasks;
   
-  /// عدد المهام المعلقة
+  /// عدد المهام المعلقة العام
   final int pendingTasks;
   
-  /// نسبة الإنجاز (0-100)
+  /// نسبة الإنجاز العامة (0-100)
   final double completionRate;
+
+  /// إجمالي مهام اليوم (تاريخ استحقاقها اليوم)
+  final int todayTotalTasks;
+
+  /// مهام اليوم المكتملة (تاريخ استحقاقها اليوم ومكتملة)
+  final int todayCompletedTasks;
+
+  /// مهام اليوم المعلقة (تاريخ استحقاقها اليوم وغير مكتملة)
+  final int todayPendingTasks;
+
+  /// نسبة إنجاز اليوم (0-100)
+  final double todayProgressRate;
   
   /// الإحصائيات اليومية (آخر 7 أيام)
   final List<DailyStats> dailyStats;
@@ -70,6 +83,10 @@ class StatisticsState {
     this.completedTasks = 0,
     this.pendingTasks = 0,
     this.completionRate = 0.0,
+    this.todayTotalTasks = 0,
+    this.todayCompletedTasks = 0,
+    this.todayPendingTasks = 0,
+    this.todayProgressRate = 0.0,
     this.dailyStats = const [],
     this.isLoading = false,
     this.lastUpdated,
@@ -84,6 +101,10 @@ class StatisticsState {
     int? completedTasks,
     int? pendingTasks,
     double? completionRate,
+    int? todayTotalTasks,
+    int? todayCompletedTasks,
+    int? todayPendingTasks,
+    double? todayProgressRate,
     List<DailyStats>? dailyStats,
     bool? isLoading,
     DateTime? lastUpdated,
@@ -96,6 +117,10 @@ class StatisticsState {
       completedTasks: completedTasks ?? this.completedTasks,
       pendingTasks: pendingTasks ?? this.pendingTasks,
       completionRate: completionRate ?? this.completionRate,
+      todayTotalTasks: todayTotalTasks ?? this.todayTotalTasks,
+      todayCompletedTasks: todayCompletedTasks ?? this.todayCompletedTasks,
+      todayPendingTasks: todayPendingTasks ?? this.todayPendingTasks,
+      todayProgressRate: todayProgressRate ?? this.todayProgressRate,
       dailyStats: dailyStats ?? this.dailyStats,
       isLoading: isLoading ?? this.isLoading,
       lastUpdated: lastUpdated ?? this.lastUpdated,
@@ -134,39 +159,54 @@ class StatisticsNotifier extends StateNotifier<StatisticsState> {
 
     try {
       // جلب جميع المهام
-      final tasks = ref.read(tasksProvider);
-      
-      // حساب الإحصائيات الأساسية
-      final totalTasks = tasks.length;
-      final completedTasks = tasks.where((task) => task.isDone).length;
-      final pendingTasks = totalTasks - completedTasks;
-      final completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0.0;
+      final allTasks = ref.read(tasksProvider);
 
-      // حساب توزيع المهام حسب التصنيف
+      // ── تصنيف المهام العام بدقة بدون تكرار (double-counting) ─────────────
+      final completedTasks = allTasks.where((t) => t.isDone).length;
+      final activeTasks = allTasks.where((t) => !t.isArchived).toList();
+      final pendingTasks = activeTasks.where((t) => !t.isDone).length;
+      final totalTasks = activeTasks.length + completedTasks;
+      final completionRate = totalTasks > 0
+          ? (completedTasks / totalTasks) * 100
+          : 0.0;
+
+      // ── حساب إحصائيات إنجاز اليوم حصراً (Today's Tasks) ────────────────
+      final todayTasks = allTasks.where((t) => AppDateUtils.isToday(t.dueDate)).toList();
+      final todayCompletedTasks = todayTasks.where((t) => t.isDone).length;
+      final todayPendingTasks = todayTasks.where((t) => !t.isDone).length;
+      final todayTotalTasks = todayTasks.length;
+      final todayProgressRate = todayTotalTasks > 0
+          ? (todayCompletedTasks / todayTotalTasks) * 100
+          : 0.0;
+
+      // حساب توزيع المهام حسب التصنيف (المهام النشطة فقط)
       final categoryDistribution = <TaskCategory, int>{};
-      for (final task in tasks) {
-        categoryDistribution[task.safeCategory] = (categoryDistribution[task.safeCategory] ?? 0) + 1;
+      for (final task in activeTasks) {
+        categoryDistribution[task.safeCategory] =
+            (categoryDistribution[task.safeCategory] ?? 0) + 1;
       }
 
-      // حساب توزيع المهام حسب الأولوية
+      // حساب توزيع المهام حسب الأولوية (المهام النشطة فقط)
       final priorityDistribution = <int, int>{0: 0, 1: 0, 2: 0};
-      for (final task in tasks) {
-        priorityDistribution[task.priority] = (priorityDistribution[task.priority] ?? 0) + 1;
+      for (final task in activeTasks) {
+        priorityDistribution[task.priority] =
+            (priorityDistribution[task.priority] ?? 0) + 1;
       }
 
       // حساب الإحصائيات اليومية (آخر 7 أيام)
-      final dailyStats = _calculateDailyStats(tasks);
+      final dailyStats = _calculateDailyStats(allTasks);
 
       // تحليل الإنتاجية للمهام المكتملة
       ProductivityAnalysis? productivityAnalysis;
       if (completedTasks > 0) {
-        final completedTasksData = tasks
+        final completedTasksData = allTasks
             .where((task) => task.isDone)
             .map((task) => {
                   'title': task.title,
                   'category': task.safeCategory.name,
                   'priority': task.priority,
-                  'completedAt': task.dueDate?.toIso8601String() ?? DateTime.now().toIso8601String(),
+                  'completedAt':
+                      task.dueDate?.toIso8601String() ?? DateTime.now().toIso8601String(),
                 })
             .toList();
         
@@ -181,6 +221,10 @@ class StatisticsNotifier extends StateNotifier<StatisticsState> {
         completedTasks: completedTasks,
         pendingTasks: pendingTasks,
         completionRate: completionRate,
+        todayTotalTasks: todayTotalTasks,
+        todayCompletedTasks: todayCompletedTasks,
+        todayPendingTasks: todayPendingTasks,
+        todayProgressRate: todayProgressRate,
         dailyStats: dailyStats,
         isLoading: false,
         lastUpdated: DateTime.now(),

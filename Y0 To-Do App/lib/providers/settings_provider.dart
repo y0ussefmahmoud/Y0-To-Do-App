@@ -115,6 +115,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _saveSettings();
   }
 
+  /// تبديل حالة قفل التطبيق (App Lock)
+  Future<void> toggleAppLock(bool enabled) async {
+    state = state.copyWith(appLockEnabled: enabled);
+    await _saveSettings();
+  }
+
   Future<void> resetToDefaults() async {
     state = const AppSettings();
     await _saveSettings();
@@ -160,5 +166,19 @@ final themeModeProvider = Provider<ThemeMode>((ref) {
     case 'system':
     default:
       return ThemeMode.system;
+  }
+});
+
+/// Provider لتحويل لغة الإعداد إلى Locale مناسبة
+/// 
+/// AR هي الإعداد الافتراضي.
+final localeProvider = Provider<Locale>((ref) {
+  final settings = ref.watch(settingsProvider);
+  switch (settings.language) {
+    case 'en':
+      return const Locale('en');
+    case 'ar':
+    default:
+      return const Locale('ar');
   }
 });

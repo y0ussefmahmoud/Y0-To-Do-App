@@ -39,7 +39,7 @@ import '../utils/error_handler.dart';
 /// ```
 /// 
 /// @author Y0 Development Team
-/// @version 3.2.8
+/// @version 3.4.0
 class BackupService {
   static final BackupService _instance = BackupService._internal();
   

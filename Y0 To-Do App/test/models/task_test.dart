@@ -8,13 +8,19 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:y0_todo_app/models/task.dart';
 import 'package:y0_todo_app/models/task_category.dart';
+import 'package:y0_todo_app/models/sub_task.dart';
+import 'package:y0_todo_app/models/recurrence_rule.dart';
 
 /// 🧪 Unit Tests for Task Model
 /// 
-/// Tests the Task model's functionality.
-/// 
+/// Tests the Task model's functionality including v3.3.0 additions:
+///   - sortOrder field default value and backward compat
+///   - isArchived logic (completed, overdue > 30 days, pending <= 30 days)
+///   - copyWith with sortOrder
+///   - toJson / fromJson round-trip
+///
 /// @author Y0 Development Team
-/// @version 3.2.5
+/// @version 3.3.0
 void main() {
   group('Task Model Tests', () {
     test('Task should be created with valid parameters', () {
@@ -79,24 +85,186 @@ void main() {
       expect(task.safeCategory, equals(TaskCategory.work));
     });
 
-    test('Task isArchived returns true for completed tasks or tasks older than 30 days', () {
-      final completedTask = Task(id: '1', title: 'Completed', isDone: true);
-      final oldTask = Task(
-        id: '2',
-        title: 'Old',
-        isDone: false,
-        dueDate: DateTime.now().subtract(const Duration(days: 35)),
+    // ── v3.3.0: Specific Archive Criteria Verification ─────────────────────
+
+    test('1. Task completed 1 day ago -> isArchived == true', () {
+      final completedTask = Task(
+        id: 't-comp-1',
+        title: 'Completed Yesterday',
+        isDone: true,
+        dueDate: DateTime.now().subtract(const Duration(days: 1)),
       );
-      final activeTask = Task(
-        id: '3',
-        title: 'Active',
+      expect(completedTask.isArchived, isTrue);
+    });
+
+    test('2. Task pending with due date 31 days ago -> isArchived == true', () {
+      final overdueTask = Task(
+        id: 't-overdue-31',
+        title: 'Pending 31 Days Overdue',
         isDone: false,
-        dueDate: DateTime.now().add(const Duration(days: 2)),
+        dueDate: DateTime.now().subtract(const Duration(days: 31)),
+      );
+      expect(overdueTask.isArchived, isTrue);
+    });
+
+    test('3. Task pending with due date 10 days ago -> isArchived == false (Stays in Home view)', () {
+      final pendingTask = Task(
+        id: 't-pending-10',
+        title: 'Pending 10 Days Overdue',
+        isDone: false,
+        dueDate: DateTime.now().subtract(const Duration(days: 10)),
+      );
+      expect(pendingTask.isArchived, isFalse);
+    });
+
+    test('Task pending with no dueDate -> isArchived == false', () {
+      final task = Task(id: 't5', title: 'No due date', isDone: false);
+      expect(task.isArchived, isFalse);
+    });
+
+    test('Task pending due in the future -> isArchived == false', () {
+      final task = Task(
+        id: 't-future',
+        title: 'Due in future',
+        isDone: false,
+        dueDate: DateTime.now().add(const Duration(days: 5)),
+      );
+      expect(task.isArchived, isFalse);
+    });
+
+    // ── v3.3.0: sortOrder Tests ─────────────────────────────────────────────
+
+    test('sortOrder defaults to 0 when not specified', () {
+      final task = Task(id: 't1', title: 'No sortOrder specified');
+      expect(task.sortOrder, equals(0));
+    });
+
+    test('sortOrder is set correctly when specified', () {
+      final task = Task(id: 't2', title: 'With sortOrder', sortOrder: 5);
+      expect(task.sortOrder, equals(5));
+    });
+
+    test('copyWith preserves sortOrder when not provided', () {
+      final task = Task(id: 't3', title: 'Original', sortOrder: 3);
+      final copy = task.copyWith(title: 'Updated');
+      expect(copy.sortOrder, equals(3));
+    });
+
+    test('copyWith updates sortOrder when provided', () {
+      final task = Task(id: 't4', title: 'Original', sortOrder: 1);
+      final copy = task.copyWith(sortOrder: 10);
+      expect(copy.sortOrder, equals(10));
+    });
+
+    // ── v3.3.0: toJson / fromJson round-trip ───────────────────────────────
+
+    test('toJson / fromJson round-trip preserves sortOrder', () {
+      final original = Task(
+        id: 'rt1',
+        title: 'Round-trip task',
+        priority: 1,
+        isDone: false,
+        sortOrder: 7,
+        category: TaskCategory.study,
+        dueDate: DateTime(2026, 9, 1),
       );
 
-      expect(completedTask.isArchived, isTrue);
-      expect(oldTask.isArchived, isTrue);
-      expect(activeTask.isArchived, isFalse);
+      final json = original.toJson();
+      final restored = Task.fromJson(json);
+
+      expect(restored.id, equals(original.id));
+      expect(restored.title, equals(original.title));
+      expect(restored.sortOrder, equals(7));
+      expect(restored.priority, equals(1));
+      expect(restored.category, equals(TaskCategory.study));
+    });
+
+    test('fromJson sets sortOrder=0 when key is missing (backward compat)', () {
+      final json = <String, dynamic>{
+        'id': 'old-task',
+        'title': 'Legacy Task',
+        'priority': 0,
+        'isDone': false,
+        'category': 'general',
+      };
+
+      final task = Task.fromJson(json);
+      expect(task.sortOrder, equals(0));
+    });
+
+    // ── v3.4.0: SubTasks & Recurrence Tests ─────────────────────────────────
+
+    test('Task subtasks defaults to empty list and getters calculate correctly', () {
+      final taskWithoutSubtasks = Task(id: 'ts1', title: 'Task without subtasks');
+      expect(taskWithoutSubtasks.subtasks, isEmpty);
+      expect(taskWithoutSubtasks.completedSubtasksCount, equals(0));
+      expect(taskWithoutSubtasks.subtasksProgress, equals(0.0));
+
+      final sub1 = SubTask(id: 's1', title: 'Subtask 1', isDone: true);
+      final sub2 = SubTask(id: 's2', title: 'Subtask 2', isDone: false);
+      final taskWithSubtasks = Task(
+        id: 'ts2',
+        title: 'Task with subtasks',
+        subtasks: [sub1, sub2],
+      );
+
+      expect(taskWithSubtasks.subtasks.length, equals(2));
+      expect(taskWithSubtasks.completedSubtasksCount, equals(1));
+      expect(taskWithSubtasks.subtasksProgress, equals(0.5));
+    });
+
+    test('Task isRecurring getter works based on recurrenceRule presence', () {
+      final normalTask = Task(id: 't-normal', title: 'Normal Task');
+      expect(normalTask.isRecurring, isFalse);
+
+      final recurringTask = Task(
+        id: 't-rec',
+        title: 'Recurring Task',
+        recurrenceRule: RecurrenceRule(
+          frequency: RecurrenceFrequency.daily,
+          interval: 1,
+        ),
+      );
+      expect(recurringTask.isRecurring, isTrue);
+    });
+
+    test('Task completedAt field can be set and preserved in copyWith', () {
+      final now = DateTime.now();
+      final task = Task(id: 't-comp', title: 'Completed', completedAt: now);
+      expect(task.completedAt, equals(now));
+
+      final copy = task.copyWith(title: 'Updated Title');
+      expect(copy.completedAt, equals(now));
+    });
+
+    test('Task toJson / fromJson round-trip preserves v3.4.0 fields', () {
+      final task = Task(
+        id: 't-v340',
+        title: 'v3.4.0 Task',
+        recurrenceRule: RecurrenceRule(
+          frequency: RecurrenceFrequency.weekly,
+          interval: 2,
+        ),
+        subtasks: [
+          SubTask(id: 's10', title: 'Sub 1', isDone: true),
+          SubTask(id: 's20', title: 'Sub 2', isDone: false),
+        ],
+        tags: ['urgent', 'project'],
+        completedAt: DateTime(2026, 9, 4, 12, 0),
+      );
+
+      final json = task.toJson();
+      final restored = Task.fromJson(json);
+
+      expect(restored.isRecurring, isTrue);
+      expect(restored.recurrenceRule?.frequency, equals(RecurrenceFrequency.weekly));
+      expect(restored.recurrenceRule?.interval, equals(2));
+      expect(restored.subtasks.length, equals(2));
+      expect(restored.subtasks[0].isDone, isTrue);
+      expect(restored.subtasks[1].title, equals('Sub 2'));
+      expect(restored.tags, containsAll(['urgent', 'project']));
+      expect(restored.completedAt, equals(DateTime(2026, 9, 4, 12, 0)));
     });
   });
 }
+
