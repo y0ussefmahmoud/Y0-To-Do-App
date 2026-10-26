@@ -13,7 +13,7 @@ import '../theme/y0_design_system.dart';
 /// ويدجت لعرض مؤشر التقدم الدائري مع تأثيرات Neo-morphic
 /// يعرض نسبة الإنجاز اليومية بشكل جذاب وتفاعلي
 /// 
-/// @author Y0 Development Team
+/// @author Y0 Tech Solutions
 /// @version 3.1.0
 class DailyProgressOrb extends StatefulWidget {
   /// نسبة التقدم (0.0 إلى 1.0)

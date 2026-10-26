@@ -12,6 +12,7 @@ import '../../l10n/l10n_extension.dart';
 import '../../theme/y0_design_system.dart';
 import '../../widgets/bottom_navigation.dart';
 import '../../widgets/voice_input_button.dart';
+import '../../widgets/app_logo.dart';
 import '../../models/task.dart';
 import '../../services/speech_service.dart';
 import '../../services/task_service.dart';
@@ -124,15 +125,13 @@ class HomeScreenNeoMorphic extends ConsumerWidget {
                 horizontal: Y0DesignSystem.spacing3,
                 vertical: Y0DesignSystem.spacing2,
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    context.l10n.appTitle,
-                    style: context.textTheme.headlineMedium?.copyWith(
-                      color: context.colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  AppBrandHeader(
+                    logoSize: 34.0,
+                    showTitle: true,
+                    showVersionBadge: true,
                   ),
                 ],
               ),

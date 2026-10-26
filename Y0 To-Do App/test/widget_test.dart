@@ -10,7 +10,7 @@
 /// Note: Full widget tests require Hive initialization which is complex to set up in tests.
 /// Unit tests for models and services are available in test/models/ and test/services/
 /// 
-/// @author Y0 Development Team
+/// @author Y0 Tech Solutions
 /// @version 3.2.5
 
 library;

@@ -37,7 +37,7 @@ class EditorialHeroHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'V3.4.0 • ${context.l10n.statisticsSubtitle}',
+          'V1.0.12 • ${context.l10n.statisticsSubtitle}',
           style: context.textTheme.labelMedium?.copyWith(
             color: isDark 
                 ? const Color(0xFF66bb6a)

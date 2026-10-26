@@ -169,7 +169,7 @@
 
   "aboutSection": "حول التطبيق",
   "aboutAppLabel": "معلومات التطبيق",
-  "aboutAppSubtitle": "Y0 To-Do App v3.4.0",
+  "aboutAppSubtitle": "Y0 To-Do App v1.0.12",
   "aboutAppDescription": "تطبيق مهام احترافي مع دعم كامل للغتين العربية والإنجليزية، التشفير الآمن AES-256، وترتيب المهام بالأولوية.",
   "resetSettingsLabel": "إعادة تعيين الإعدادات",
   "resetSettingsSubtitle": "استعادة جميع الإعدادات الافتراضية",
@@ -253,5 +253,20 @@
 
   "snooze15Mins": "تأجيل 15 دقيقة",
   "snoozeTomorrow": "تأجيل لصباح الغد",
-  "actionComplete": "إكمال المهمة"
+  "actionComplete": "إكمال المهمة",
+
+  "pickDueTimeLabel": "تحديد الوقت",
+  "dueTimePrefix": "الوقت: {time}",
+  "@dueTimePrefix": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "clearTimeTooltip": "إلغاء الوقت المحدد",
+  "clearDateTooltip": "إلغاء التاريخ المحدد",
+
+  "tagsLabel": "الوسوم",
+  "tagsHint": "أضف وسماً واضغط Enter...",
+  "tagsFilterTitle": "فلترة بالوسوم",
+  "noTagsMessage": "لا توجد وسوم",
+  "tagAdded": "تمت إضافة الوسم",
+  "tagRemoved": "تم حذف الوسم"
 }

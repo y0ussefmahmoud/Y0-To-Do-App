@@ -142,7 +142,7 @@
 
   "aboutSection": "About App",
   "aboutAppLabel": "App Information",
-  "aboutAppSubtitle": "Y0 To-Do App v3.4.0",
+  "aboutAppSubtitle": "Y0 To-Do App v1.0.12",
   "aboutAppDescription": "A professional task management app with full Arabic and English support, secure AES-256 encryption, and priority sorting.",
   "resetSettingsLabel": "Reset Settings",
   "resetSettingsSubtitle": "Restore all default settings",
@@ -217,5 +217,20 @@
 
   "snooze15Mins": "Snooze 15 mins",
   "snoozeTomorrow": "Snooze until tomorrow morning",
-  "actionComplete": "Complete Task"
+  "actionComplete": "Complete Task",
+
+  "pickDueTimeLabel": "Set Time",
+  "dueTimePrefix": "Time: {time}",
+  "@dueTimePrefix": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "clearTimeTooltip": "Clear scheduled time",
+  "clearDateTooltip": "Clear scheduled date",
+
+  "tagsLabel": "Tags",
+  "tagsHint": "Add a tag and press Enter...",
+  "tagsFilterTitle": "Filter by Tags",
+  "noTagsMessage": "No tags available",
+  "tagAdded": "Tag added",
+  "tagRemoved": "Tag removed"
 }

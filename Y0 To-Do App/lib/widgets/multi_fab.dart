@@ -15,7 +15,7 @@ import 'neo_morphic_card.dart';
 /// يمكن توسيعه لإظهار أزرار إضافية (إضافة حدث، إشعار، مهمة)
 /// يتبع نظام التصميم Y0DesignSystem
 /// 
-/// @author Y0 Development Team
+/// @author Y0 Tech Solutions
 /// @version 3.1.0
 class MultiFab extends StatefulWidget {
   /// هل الزر موسع حالياً

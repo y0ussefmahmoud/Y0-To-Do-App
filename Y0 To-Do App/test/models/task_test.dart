@@ -10,6 +10,7 @@ import 'package:y0_todo_app/models/task.dart';
 import 'package:y0_todo_app/models/task_category.dart';
 import 'package:y0_todo_app/models/sub_task.dart';
 import 'package:y0_todo_app/models/recurrence_rule.dart';
+import 'package:y0_todo_app/models/task_filter.dart';
 
 /// 🧪 Unit Tests for Task Model
 /// 
@@ -19,7 +20,7 @@ import 'package:y0_todo_app/models/recurrence_rule.dart';
 ///   - copyWith with sortOrder
 ///   - toJson / fromJson round-trip
 ///
-/// @author Y0 Development Team
+/// @author Y0 Tech Solutions
 /// @version 3.3.0
 void main() {
   group('Task Model Tests', () {
@@ -264,6 +265,169 @@ void main() {
       expect(restored.subtasks[1].title, equals('Sub 2'));
       expect(restored.tags, containsAll(['urgent', 'project']));
       expect(restored.completedAt, equals(DateTime(2026, 9, 4, 12, 0)));
+    });
+
+    // ── v3.4.1: hasTime & Hour/Time-Based Scheduling Tests ──────────────────
+
+    test('Task hasTime returns false when dueDate is null or 00:00', () {
+      final noDueDateTask = Task(id: 't-notime-1', title: 'No due date');
+      expect(noDueDateTask.hasTime, isFalse);
+
+      final dateOnlyTask = Task(
+        id: 't-notime-2',
+        title: 'Date only',
+        dueDate: DateTime(2026, 9, 25, 0, 0),
+      );
+      expect(dateOnlyTask.hasTime, isFalse);
+    });
+
+    test('Task hasTime returns true when dueDate has non-zero hour or minute', () {
+      final taskWithHour = Task(
+        id: 't-time-1',
+        title: 'With 10 AM',
+        dueDate: DateTime(2026, 9, 25, 10, 0),
+      );
+      expect(taskWithHour.hasTime, isTrue);
+
+      final taskWithMinute = Task(
+        id: 't-time-2',
+        title: 'With 00:30',
+        dueDate: DateTime(2026, 9, 25, 0, 30),
+      );
+      expect(taskWithMinute.hasTime, isTrue);
+    });
+
+    test('Tasks for the same day sort chronologically by scheduled time', () {
+      final taskMorning = Task(
+        id: 't-morning',
+        title: 'Morning Meeting',
+        dueDate: DateTime(2026, 9, 25, 9, 30),
+      );
+      final taskEvening = Task(
+        id: 't-evening',
+        title: 'Evening Review',
+        dueDate: DateTime(2026, 9, 25, 18, 0),
+      );
+      final taskAfternoon = Task(
+        id: 't-afternoon',
+        title: 'Lunch with Client',
+        dueDate: DateTime(2026, 9, 25, 13, 15),
+      );
+      final taskAllDay = Task(
+        id: 't-allday',
+        title: 'All Day Task',
+        dueDate: DateTime(2026, 9, 25, 0, 0),
+      );
+
+      final list = [taskEvening, taskAllDay, taskMorning, taskAfternoon];
+
+      list.sort((a, b) {
+        if (a.hasTime && b.hasTime) {
+          return a.dueDate!.compareTo(b.dueDate!);
+        } else if (a.hasTime && !b.hasTime) {
+          return -1;
+        } else if (!a.hasTime && b.hasTime) {
+          return 1;
+        }
+        return 0;
+      });
+
+      expect(list.map((t) => t.id).toList(), [
+        't-morning',
+        't-afternoon',
+        't-evening',
+        't-allday',
+      ]);
+    });
+
+    // ── v3.5.0: Tags & TaskFilter Tests ───────────────────────────────────
+
+    test('Task supports custom tags and copyWith updates tags', () {
+      final task = Task(
+        id: 't-tags',
+        title: 'Task with tags',
+        tags: ['urgent', 'work'],
+      );
+
+      expect(task.tags, ['urgent', 'work']);
+
+      final updated = task.copyWith(tags: ['work', 'design', 'review']);
+      expect(updated.tags, ['work', 'design', 'review']);
+      expect(updated.id, 't-tags');
+    });
+
+    test('TaskFilter toggleTag, isActive, activeFiltersCount, and equality work correctly', () {
+      const filter = TaskFilter();
+      expect(filter.isActive, isFalse);
+      expect(filter.activeFiltersCount, 0);
+
+      final filterWithTag = filter.toggleTag('work');
+      expect(filterWithTag.tags, {'work'});
+      expect(filterWithTag.isActive, isTrue);
+      expect(filterWithTag.activeFiltersCount, 1);
+
+      final filterWithTwoTags = filterWithTag.toggleTag('mobile');
+      expect(filterWithTwoTags.tags, {'work', 'mobile'});
+      expect(filterWithTwoTags.activeFiltersCount, 2);
+
+      final untoggled = filterWithTwoTags.toggleTag('work');
+      expect(untoggled.tags, {'mobile'});
+      expect(untoggled.activeFiltersCount, 1);
+
+      // Equality check
+      final another = const TaskFilter().toggleTag('mobile');
+      expect(untoggled, equals(another));
+    });
+
+    // ── v1.0.11: Chronological Sorting & Reordering Tests ─────────────────
+
+    test('Tasks sort chronologically by sortOrder ascending (oldest first)', () {
+      final task1 = Task(id: 't-1', title: 'First created', sortOrder: 0);
+      final task2 = Task(id: 't-2', title: 'Second created', sortOrder: 1);
+      final task3 = Task(id: 't-3', title: 'Third created', sortOrder: 2);
+
+      final tasks = [task3, task1, task2];
+      tasks.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+      expect(tasks.map((t) => t.id).toList(), ['t-1', 't-2', 't-3']);
+      expect(tasks.first.title, 'First created');
+      expect(tasks.last.title, 'Third created');
+    });
+
+    test('Reordering updates sortOrder positions correctly', () {
+      final taskA = Task(id: 'a', title: 'A', sortOrder: 0);
+      final taskB = Task(id: 'b', title: 'B', sortOrder: 1);
+      final taskC = Task(id: 'c', title: 'C', sortOrder: 2);
+
+      final list = [taskA, taskB, taskC];
+
+      // Simulate dragging task C (index 2) to the top (index 0)
+      final moved = list.removeAt(2);
+      list.insert(0, moved);
+
+      // Reassign sortOrder sequentially
+      final updatedList = [
+        for (int i = 0; i < list.length; i++) list[i].copyWith(sortOrder: i)
+      ];
+
+      expect(updatedList.map((t) => t.id).toList(), ['c', 'a', 'b']);
+      expect(updatedList[0].sortOrder, 0);
+      expect(updatedList[1].sortOrder, 1);
+      expect(updatedList[2].sortOrder, 2);
+    });
+
+    test('Tasks with identical sortOrder fallback to ID comparison for deterministic ordering', () {
+      final taskX = Task(id: 'task-a', title: 'Task A', sortOrder: 0);
+      final taskY = Task(id: 'task-b', title: 'Task B', sortOrder: 0);
+
+      final list = [taskY, taskX];
+      list.sort((a, b) {
+        final orderCmp = a.sortOrder.compareTo(b.sortOrder);
+        if (orderCmp != 0) return orderCmp;
+        return a.id.compareTo(b.id);
+      });
+
+      expect(list.map((t) => t.id).toList(), ['task-a', 'task-b']);
     });
   });
 }

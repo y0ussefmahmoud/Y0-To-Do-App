@@ -211,10 +211,10 @@ class Y0DesignSystem {
       
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
+          backgroundColor: primary,
           foregroundColor: onPrimary,
-          elevation: 0,
-          shadowColor: Colors.transparent,
+          elevation: 2,
+          shadowColor: primary.withValues(alpha: 0.25),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusMedium),
           ),
@@ -327,10 +327,10 @@ class Y0DesignSystem {
       
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          foregroundColor: onPrimary,
-          elevation: 0,
-          shadowColor: Colors.transparent,
+          backgroundColor: primaryContainer,
+          foregroundColor: const Color(0xFF00390E),
+          elevation: 2,
+          shadowColor: primaryContainer.withValues(alpha: 0.25),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusMedium),
           ),

@@ -27,7 +27,7 @@ import '../theme/y0_design_system.dart';
 /// - Date/time picker integration
 /// - Smart AI suggestions integration
 /// 
-/// @author Y0 Development Team
+/// @author Y0 Tech Solutions
 /// @version 2.4.0
 class NeoMorphicTaskDialog extends StatefulWidget {
   final String? initialTitle;

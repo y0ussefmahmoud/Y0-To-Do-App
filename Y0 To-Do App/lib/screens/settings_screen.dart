@@ -24,6 +24,7 @@ import '../widgets/bottom_navigation.dart';
 import '../widgets/settings/language_selector.dart';
 import '../widgets/settings/notification_time_selector.dart';
 import '../widgets/settings/name_edit_dialog.dart';
+import '../widgets/app_logo.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -41,6 +42,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
+          SliverAppBar(
+            floating: true,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: theme.colorScheme.surface,
+            automaticallyImplyLeading: false,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        AppBrandHeader(
+                          logoSize: 34.0,
+                          showTitle: true,
+                          showVersionBadge: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
@@ -419,8 +456,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: context.l10n.appTitle,
-      applicationVersion: packageInfo.version.isEmpty ? '3.4.0' : packageInfo.version,
-      applicationIcon: const Icon(Icons.task_alt, size: 48),
+      applicationVersion: packageInfo.version.isEmpty ? '1.0.12' : packageInfo.version,
+      applicationIcon: const AppLogo(size: 48, showShadow: true),
       children: [
         Text(context.l10n.aboutAppDescription),
       ],

@@ -38,8 +38,8 @@ import '../utils/error_handler.dart';
 /// await backupService.importBackup(jsonString);
 /// ```
 /// 
-/// @author Y0 Development Team
-/// @version 3.4.0
+/// @author Y0 Tech Solutions
+/// @version 1.0.12
 class BackupService {
   static final BackupService _instance = BackupService._internal();
   

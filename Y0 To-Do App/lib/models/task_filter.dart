@@ -58,17 +58,22 @@ extension DateFilterExtension on DateFilter {
 /// - [priorities]: Set — يمكن اختيار أكثر من أولوية في آن واحد
 /// - [categories]: Set — يمكن اختيار أكثر من فئة في آن واحد
 /// - [dateFilters]: Set — يمكن اختيار أكثر من فلتر تاريخ (اليوم + هذا الأسبوع مثلاً)
+/// - [tags]: Set — يمكن اختيار أكثر من وسم (OR logic)
 class TaskFilter {
   final TaskStatus? status;
   final Set<int> priorities;
   final Set<TaskCategory> categories;
   final Set<DateFilter> dateFilters;
 
+  /// الوسوم المختارة للفلترة (OR — أي مهمة تحمل أحد هذه الوسوم)
+  final Set<String> tags;
+
   const TaskFilter({
     this.status,
     this.priorities = const {},
     this.categories = const {},
     this.dateFilters = const {},
+    this.tags = const {},
   });
 
   /// تبديل أولوية (إضافة إن لم تكن موجودة، حذف إن كانت)
@@ -104,6 +109,17 @@ class TaskFilter {
     return copyWith(dateFilters: newDateFilters);
   }
 
+  /// تبديل وسم (إضافة إن لم يكن موجوداً، حذف إن كان)
+  TaskFilter toggleTag(String tag) {
+    final newTags = Set<String>.from(tags);
+    if (newTags.contains(tag)) {
+      newTags.remove(tag);
+    } else {
+      newTags.add(tag);
+    }
+    return copyWith(tags: newTags);
+  }
+
   /// تبديل حالة المهمة (اختيار فردي — يُلغى إن نُقر مرة ثانية)
   TaskFilter toggleStatus(TaskStatus newStatus) {
     if (status == newStatus) {
@@ -117,6 +133,7 @@ class TaskFilter {
     Set<int>? priorities,
     Set<TaskCategory>? categories,
     Set<DateFilter>? dateFilters,
+    Set<String>? tags,
     bool clearStatus = false,
   }) {
     return TaskFilter(
@@ -124,6 +141,7 @@ class TaskFilter {
       priorities: priorities ?? this.priorities,
       categories: categories ?? this.categories,
       dateFilters: dateFilters ?? this.dateFilters,
+      tags: tags ?? this.tags,
     );
   }
 
@@ -131,7 +149,8 @@ class TaskFilter {
     return status != null ||
         priorities.isNotEmpty ||
         categories.isNotEmpty ||
-        dateFilters.isNotEmpty;
+        dateFilters.isNotEmpty ||
+        tags.isNotEmpty;
   }
 
   int get activeFiltersCount {
@@ -140,6 +159,7 @@ class TaskFilter {
     count += priorities.length;
     count += categories.length;
     count += dateFilters.length;
+    count += tags.length;
     return count;
   }
 
@@ -153,9 +173,11 @@ class TaskFilter {
     if (other.priorities.length != priorities.length) return false;
     if (other.categories.length != categories.length) return false;
     if (other.dateFilters.length != dateFilters.length) return false;
+    if (other.tags.length != tags.length) return false;
     return other.priorities.containsAll(priorities) &&
         other.categories.containsAll(categories) &&
-        other.dateFilters.containsAll(dateFilters);
+        other.dateFilters.containsAll(dateFilters) &&
+        other.tags.containsAll(tags);
   }
 
   @override
@@ -165,6 +187,7 @@ class TaskFilter {
       Object.hashAllUnordered(priorities),
       Object.hashAllUnordered(categories),
       Object.hashAllUnordered(dateFilters),
+      Object.hashAllUnordered(tags),
     );
   }
 }

@@ -27,7 +27,7 @@ import '../providers/task_provider.dart';
 /// await taskService.rescheduleAllNotifications();
 /// ```
 /// 
-/// @author Y0 Development Team
+/// @author Y0 Tech Solutions
 /// @version 3.2.5
 class TaskService {
   final WidgetRef _ref;

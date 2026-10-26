@@ -13,7 +13,7 @@ import '../theme/y0_design_system.dart';
 /// ويدجت مخصص لإنشاء بطاقات Neo-morphic بتأثير الظل الطبيعي
 /// يتبع نظام التصميم Y0DesignSystem مع الظل المحيطي الطبيعي
 /// 
-/// @author Y0 Development Team
+/// @author Y0 Tech Solutions
 /// @version 3.1.0
 class NeoMorphicCard extends StatelessWidget {
   /// المحتوى الداخلي للبطاقة

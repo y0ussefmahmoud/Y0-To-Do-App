@@ -76,17 +76,26 @@ class TasksNotifier extends StateNotifier<List<Task>> {
   }
 
   /// إضافة مهمة جديدة
-  /// 
+  ///
   /// [task] المهمة المراد إضافتها
-  /// 
-  /// يقوم بإضافة المهمة إلى قاعدة البيانات ثم تحديث الحالة
+  ///
+  /// يقوم بإضافة المهمة إلى قاعدة البيانات ثم تحديث الحالة.
+  /// يُعيَّن sortOrder بناءً على عدد المهام النشطة المعلقة الحالية،
+  /// مما يضمن أن المهام الأقدم إنشاءً تملك sortOrder أصغر وتظهر أعلى
+  /// (Oldest-first default ordering).
   /// إذا كانت الإشعارات مفعلة، يتم جدولة إشعار للمهمة
   Future<void> addTask(Task task) async {
     try {
-      // تعيين sortOrder بناءً على عدد المهام الحالية
+      // تعيين sortOrder بحيث تظهر المهام الأقدم أولاً (الأقدم = sortOrder أصغر)
+      // والمهام الجديدة تضاف في نهاية القائمة (Newest = أعلى sortOrder)
       final currentTasks = _repo.getAll();
-      final activePending = currentTasks.where((t) => !t.isArchived).toList();
-      final taskWithOrder = task.copyWith(sortOrder: activePending.length);
+      final activePending = currentTasks.where((t) => !t.isDone && !t.isArchived).toList();
+      final nextSortOrder = activePending.isEmpty
+          ? 0
+          : (activePending.map((t) => t.sortOrder).reduce((a, b) => a > b ? a : b) + 1);
+      final taskWithOrder = task.copyWith(
+        sortOrder: task.sortOrder > 0 ? task.sortOrder : nextSortOrder,
+      );
 
       await _repo.add(taskWithOrder);
       state = [...state, taskWithOrder];
@@ -310,46 +319,53 @@ class TasksNotifier extends StateNotifier<List<Task>> {
   }
 
   /// إعادة ترتيب المهام (Drag-and-Drop)
-  /// 
-  /// [oldIndex] الفهرس القديم للمهمة في القائمة النشطة
-  /// [newIndex] الفهرس الجديد للمهمة في القائمة النشطة
-  /// 
-  /// يحدّث sortOrder لجميع المهام المتأثرة ويكتب التغييرات إلى Hive
+  ///
+  /// [oldIndex] الفهرس القديم للمهمة في القائمة النشطة المعلقة
+  /// [newIndex] الفهرس الجديد للمهمة في القائمة النشطة المعلقة
+  ///
+  /// يحدّث sortOrder لجميع المهام المتأثرة ويكتب التغييرات إلى Hive.
+  /// يفلتر فقط المهام النشطة غير المكتملة وغير المؤرشفة
+  /// بنفس معيار activePendingTasksProvider لضمان توافق الفهارس.
   Future<void> reorderTasks(int oldIndex, int newIndex) async {
     try {
-      // الحصول على المهام النشطة المرتبة (نفس ما يُعرَض في الواجهة)
-      final activeTasks = state
-          .where((t) => !t.isArchived)
+      // الحصول على المهام النشطة المعلقة المرتبة — نفس ما تعرضه الواجهة
+      final activePending = state
+          .where((t) => !t.isDone && !t.isArchived)
           .toList()
-        ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        ..sort((a, b) {
+          final orderCmp = a.sortOrder.compareTo(b.sortOrder);
+          if (orderCmp != 0) return orderCmp;
+          return a.id.compareTo(b.id);
+        });
 
       if (oldIndex < 0 ||
           newIndex < 0 ||
-          oldIndex >= activeTasks.length ||
-          newIndex > activeTasks.length) {
+          oldIndex >= activePending.length ||
+          newIndex > activePending.length) {
         return;
       }
 
-      // ReorderableListView يمرر newIndex بعد الإزالة — تصحيح المؤشر
+      // SliverReorderableList يمرر newIndex بعد الإزالة — تصحيح المؤشر
       final adjustedNewIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
 
       // إعادة الترتيب في القائمة
-      final reordered = List<Task>.from(activeTasks);
+      final reordered = List<Task>.from(activePending);
       final moved = reordered.removeAt(oldIndex);
       reordered.insert(adjustedNewIndex, moved);
 
-      // تعيين sortOrder جديد بناءً على الترتيب
-      final updatedActive = <Task>[];
+      // تعيين sortOrder جديد بناءً على الترتيب الجديد
+      // الأعلى في القائمة (فهرس 0) = sortOrder أصغر (oldest first)
+      final updatedPending = <Task>[];
       for (int i = 0; i < reordered.length; i++) {
-        updatedActive.add(reordered[i].copyWith(sortOrder: i));
+        updatedPending.add(reordered[i].copyWith(sortOrder: i));
       }
 
-      // تحديث الحالة فوراً (optimistic update)
-      final archived = state.where((t) => t.isArchived).toList();
-      state = [...updatedActive, ...archived];
+      // تحديث الحالة فوراً (optimistic update) مع الحفاظ على المهام الأخرى
+      final others = state.where((t) => t.isDone || t.isArchived).toList();
+      state = [...updatedPending, ...others];
 
       // كتابة التغييرات إلى Hive بصورة غير متزامنة (batch write)
-      for (final task in updatedActive) {
+      for (final task in updatedPending) {
         await _repo.update(task);
       }
 
@@ -431,6 +447,46 @@ class TasksNotifier extends StateNotifier<List<Task>> {
         return false;
       }).toList();
     }
+
+    // ترتيب المهام المفلترة:
+    // عند تفعيل فلتر "اليوم" أو "هذا الأسبوع"، يتم ترتيب المهام زمنياً حسب الوقت (الساعة والدقيقة).
+    // المهام ذات الوقت المحدد تأتي أولاً مرتبة زمنياً، تليها المهام بدون وقت محدد مرتبة بالأولوية.
+    final hasTodayOrWeekFilter = filter.dateFilters.contains(DateFilter.today) ||
+        filter.dateFilters.contains(DateFilter.thisWeek);
+
+    // فلترة حسب الوسوم (multi-select — OR بين الوسوم المختارة)
+    if (filter.tags.isNotEmpty) {
+      tasks = tasks.where((task) {
+        return task.tags.any((tag) => filter.tags.contains(tag));
+      }).toList();
+    }
+
+    tasks.sort((a, b) {
+      if (hasTodayOrWeekFilter) {
+        // إذا كان كلاهما له تاريخ
+        if (a.dueDate != null && b.dueDate != null) {
+          final dateA = DateTime(a.dueDate!.year, a.dueDate!.month, a.dueDate!.day);
+          final dateB = DateTime(b.dueDate!.year, b.dueDate!.month, b.dueDate!.day);
+          final dateCmp = dateA.compareTo(dateB);
+          if (dateCmp != 0) return dateCmp;
+
+          // نفس اليوم: التحقق من وجود وقت محدد
+          if (a.hasTime && b.hasTime) {
+            final timeCmp = a.dueDate!.compareTo(b.dueDate!);
+            if (timeCmp != 0) return timeCmp;
+          } else if (a.hasTime && !b.hasTime) {
+            return -1; // ذات الوقت تأتي أولاً
+          } else if (!a.hasTime && b.hasTime) {
+            return 1;
+          }
+        }
+      }
+
+      // الترتيب الافتراضي
+      final orderCmp = a.sortOrder.compareTo(b.sortOrder);
+      if (orderCmp != 0) return orderCmp;
+      return b.priority.compareTo(a.priority);
+    });
 
     return tasks;
   }
@@ -521,21 +577,45 @@ final tasksProvider = StateNotifierProvider<TasksNotifier, List<Task>>((ref) {
   return TasksNotifier(repo, ref);
 });
 
-/// Provider للمهام النشطة (غير مؤرشفة)
-/// 
+/// Provider للمهام النشطة المعلقة (غير مكتملة وغير مؤرشفة)
+///
 /// يُظهر فقط المهام غير المكتملة وغير المؤرشفة (!isDone && !isArchived)
-/// مرتبة حسب sortOrder أولاً ثم الأولوية
+/// مرتبة حسب sortOrder تصاعدياً (الأقدم إنشاءً أولاً) كترتيب افتراضي.
+/// المهام ذات نفس sortOrder تُرتَّب ثانياً حسب الوقت المحدد (إن وُجد) ثم الأولوية.
+/// يمكن للمستخدم إعادة ترتيب المهام يدوياً عبر السحب والإفلات مما يُحدّث sortOrder.
 final activePendingTasksProvider = Provider<List<Task>>((ref) {
   final tasks = ref.watch(tasksProvider);
   return tasks
       .where((t) => !t.isDone && !t.isArchived)
       .toList()
     ..sort((a, b) {
-      // الترتيب الأساسي: sortOrder تصاعدي
+      // الترتيب الأساسي: sortOrder تصاعدي (الأقدم إنشاءً = sortOrder أصغر = يظهر أولاً)
       final orderCmp = a.sortOrder.compareTo(b.sortOrder);
       if (orderCmp != 0) return orderCmp;
+
+      // الترتيب الزمني: إذا كان للمهمتين نفس يوم الاستحقاق وكان لأحدهما أو كلاهما وقت محدد
+      if (a.dueDate != null && b.dueDate != null) {
+        final sameDay = a.dueDate!.year == b.dueDate!.year &&
+            a.dueDate!.month == b.dueDate!.month &&
+            a.dueDate!.day == b.dueDate!.day;
+        if (sameDay) {
+          if (a.hasTime && b.hasTime) {
+            final timeCmp = a.dueDate!.compareTo(b.dueDate!);
+            if (timeCmp != 0) return timeCmp;
+          } else if (a.hasTime && !b.hasTime) {
+            return -1;
+          } else if (!a.hasTime && b.hasTime) {
+            return 1;
+          }
+        }
+      }
+
       // الترتيب الثانوي: الأولوية تنازلي (الأعلى أولاً)
-      return b.priority.compareTo(a.priority);
+      final priorityCmp = b.priority.compareTo(a.priority);
+      if (priorityCmp != 0) return priorityCmp;
+
+      // الترتيب الاحتياطي الثابت: حسب معرف المهمة (Fallback) لضمان استقرار الترتيب الافتراضي
+      return a.id.compareTo(b.id);
     });
 });
 
@@ -803,4 +883,18 @@ final taskCountsProvider = Provider<TaskCounts>((ref) {
     priorityLow: priorityLow,
     categoryCounts: categoryCounts,
   );
+});
+
+/// Provider لجميع الوسوم المستخدمة في المهام (مجمّعة وفريدة ومرتبة)
+///
+/// يستخلص جميع الوسوم الفريدة من كل المهام ويرتبها أبجدياً.
+/// يستخدمه QuickFilters لعرض شرائح الوسوم الديناميكية.
+final allTagsProvider = Provider<List<String>>((ref) {
+  final tasks = ref.watch(tasksProvider);
+  final tagSet = <String>{};
+  for (final task in tasks) {
+    tagSet.addAll(task.tags);
+  }
+  final sorted = tagSet.toList()..sort();
+  return sorted;
 });

@@ -803,7 +803,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutAppSubtitle.
   ///
   /// In ar, this message translates to:
-  /// **'Y0 To-Do App v3.4.0'**
+  /// **'Y0 To-Do App v1.0.12'**
   String get aboutAppSubtitle;
 
   /// No description provided for @aboutAppDescription.
@@ -1153,6 +1153,66 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إكمال المهمة'**
   String get actionComplete;
+
+  /// No description provided for @pickDueTimeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد الوقت'**
+  String get pickDueTimeLabel;
+
+  /// No description provided for @dueTimePrefix.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت: {time}'**
+  String dueTimePrefix(String time);
+
+  /// No description provided for @clearTimeTooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الوقت المحدد'**
+  String get clearTimeTooltip;
+
+  /// No description provided for @clearDateTooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء التاريخ المحدد'**
+  String get clearDateTooltip;
+
+  /// No description provided for @tagsLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوسوم'**
+  String get tagsLabel;
+
+  /// No description provided for @tagsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف وسماً واضغط Enter...'**
+  String get tagsHint;
+
+  /// No description provided for @tagsFilterTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلترة بالوسوم'**
+  String get tagsFilterTitle;
+
+  /// No description provided for @noTagsMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد وسوم'**
+  String get noTagsMessage;
+
+  /// No description provided for @tagAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت إضافة الوسم'**
+  String get tagAdded;
+
+  /// No description provided for @tagRemoved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حذف الوسم'**
+  String get tagRemoved;
 }
 
 class _AppLocalizationsDelegate

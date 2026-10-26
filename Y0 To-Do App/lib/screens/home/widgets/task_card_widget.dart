@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../l10n/l10n_extension.dart';
 import '../../../theme/y0_design_system.dart';
 import '../../../widgets/neo_morphic_card.dart';
@@ -166,12 +167,19 @@ class TaskCardWidget extends ConsumerWidget {
                               : context.colorScheme.onSurface,
                         ),
                       ),
-                      // شارات: متكررة / مهام فرعية
-                      if (task.isRecurring || task.subtasks.isNotEmpty) ...[
+                      // شارات: متكررة / مهام فرعية / الوقت المحدد / الوسوم
+                      if (task.isRecurring || task.subtasks.isNotEmpty || task.hasTime || task.tags.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Wrap(
                           spacing: 6,
+                          runSpacing: 4,
                           children: [
+                            if (task.hasTime)
+                              _BadgeChip(
+                                label: DateFormat.jm(Localizations.localeOf(context).languageCode).format(task.dueDate!),
+                                icon: Icons.access_time_filled_rounded,
+                                color: Colors.blue.shade600,
+                              ),
                             if (task.isRecurring)
                               _BadgeChip(
                                 label: context.l10n.recurringBadge,
@@ -188,6 +196,11 @@ class TaskCardWidget extends ConsumerWidget {
                                     ? Colors.green.shade600
                                     : context.colorScheme.primary,
                               ),
+                            ...task.tags.map((tag) => _BadgeChip(
+                                  label: '#$tag',
+                                  icon: Icons.tag,
+                                  color: Colors.teal.shade600,
+                                )),
                           ],
                         ),
                       ],

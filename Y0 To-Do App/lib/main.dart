@@ -23,9 +23,11 @@ import 'models/recurrence_rule.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/statistics_screen.dart';
+import 'screens/add_edit_task_screen.dart';
 import 'providers/settings_provider.dart';
 import 'services/encryption_service.dart';
 import 'services/notification_service.dart';
+import 'services/app_shortcuts_service.dart';
 import 'utils/error_handler.dart';
 import 'widgets/error_boundary.dart';
 import 'theme/y0_design_system.dart';
@@ -50,7 +52,7 @@ Future<void> main() async {
 
   // تهيئة معالج الأخطاء أولاً
   ErrorHandler.initialize();
-  ErrorHandler.logInfo('Starting Y0 To-Do App v3.4.0 initialization');
+  ErrorHandler.logInfo('Starting Y0 To-Do App v1.0.12 initialization');
 
   try {
     // ── 1. تهيئة Hive ──────────────────────────────────────────────────────
@@ -381,6 +383,21 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
         ErrorHandler.logSuccess('Notification service initialized successfully');
       } else {
         ErrorHandler.logWarning('Notification service failed to initialize - app will continue without notifications');
+      }
+
+      // تهيئة خدمة اختصارات التطبيق (Quick Actions)
+      try {
+        AppShortcutsService().initialize(handler: (shortcutType) {
+          if (shortcutType == 'action_add_task') {
+            appNavigatorKey.currentState?.push(
+              MaterialPageRoute(builder: (_) => const AddEditTaskScreen()),
+            );
+          } else if (shortcutType == 'action_stats') {
+            appNavigatorKey.currentState?.pushNamed('/statistics');
+          }
+        });
+      } catch (shortcutError) {
+        ErrorHandler.logWarning('AppShortcuts initialization warning: $shortcutError');
       }
       
       setState(() {

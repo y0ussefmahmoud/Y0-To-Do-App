@@ -101,6 +101,12 @@ class Task {
   double get subtasksProgress =>
       subtasks.isEmpty ? 0.0 : completedSubtasksCount / subtasks.length;
 
+  /// هل للمهمة وقت محدد (ساعات ودقائق) بالإضافة للتاريخ؟
+  bool get hasTime {
+    if (dueDate == null) return false;
+    return dueDate!.hour != 0 || dueDate!.minute != 0;
+  }
+
   /// التحقق مما إذا كانت المهمة ينطبق عليها شرط الأرشيف
   /// المهمة تعتبر مؤرشفة إذا كانت:
   /// 1. مكتملة (isDone == true)

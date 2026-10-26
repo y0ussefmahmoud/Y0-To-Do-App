@@ -75,76 +75,143 @@ class AIService {
   }
 
   /// استخراج الأولوية من النص
-  /// 
+  ///
   /// يبحث عن كلمات مفتاحية تدل على الأولوية
-  /// 
+  ///
   /// [text] النص بأحرف صغيرة
   /// Returns: 0 (منخفضة), 1 (متوسطة), 2 (عالية)
   int _extractPriority(String text) {
-    // كلمات عربية للأولوية العالية
-    final urgentWords = ['عاجل', 'مهم', 'ضروري', 'فوري', 'urgent', 'important', 'critical'];
+    // كلمات عربية وإنجليزية للأولوية العالية
+    final urgentWords = [
+      'عاجل', 'مهم جداً', 'مهم جدا', 'مهم', 'ضروري', 'فوري', 'أسرع',
+      'بسرعة', 'اسرع', 'حتمي', 'لا يتأخر',
+      'urgent', 'important', 'critical', 'asap', 'immediately',
+      'must', 'deadline', 'priority',
+    ];
     // كلمات للأولوية المتوسطة
-    final mediumWords = ['متوسط', 'عادي', 'medium', 'normal'];
+    final mediumWords = [
+      'متوسط', 'عادي', 'اجتماع', 'meeting', 'مراجعة', 'review',
+      'medium', 'normal', 'soon',
+    ];
     // كلمات للأولوية المنخفضة
-    final lowWords = ['بسيط', 'سهل', 'low', 'simple', 'easy'];
-    
-    for (String word in urgentWords) {
-      if (text.contains(word)) return 2; // High priority
+    final lowWords = [
+      'بسيط', 'سهل', 'لاحقاً', 'لاحقا', 'مش مهم',
+      'low', 'simple', 'easy', 'later', 'whenever',
+    ];
+
+    for (final word in urgentWords) {
+      if (text.contains(word)) return 2;
     }
-    
-    for (String word in mediumWords) {
-      if (text.contains(word)) return 1; // Medium priority
+
+    for (final word in mediumWords) {
+      if (text.contains(word)) return 1;
     }
-    
-    for (String word in lowWords) {
-      if (text.contains(word)) return 0; // Low priority
+
+    for (final word in lowWords) {
+      if (text.contains(word)) return 0;
     }
-    
-    // تحليل طول النص وتعقيده
-    if (text.length > 50 || text.contains('اجتماع') || text.contains('meeting')) {
-      return 1; // Medium priority
-    }
-    
+
+    // تحليل طول النص
+    if (text.length > 50) return 1;
+
     return 0; // Default low priority
   }
 
-  /// استخراج التاريخ من النص
-  /// 
+  /// استخراج الوقت من النص
+  ///
+  /// يتعرف على تعبيرات الوقت العربية والإنجليزية مثل:
+  /// - "at 5pm", "at 3:30pm", "at 14:00"
+  /// - "الساعة 5 مساءً", "الساعة 9:30 صباحاً"
+  ///
+  /// [text] النص بأحرف صغيرة
+  /// Returns: Record يحتوي على hour و minute، أو null إذا لم يتم التعرف
+  ({int hour, int minute})? _extractTime(String text) {
+    // الأنماط الإنجليزية: "at 5pm", "at 5:30pm", "at 5 pm"
+    final enTime12 = RegExp(
+      r'at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)',
+      caseSensitive: false,
+    );
+    final en12Match = enTime12.firstMatch(text);
+    if (en12Match != null) {
+      int hour = int.parse(en12Match.group(1)!);
+      final minute = int.tryParse(en12Match.group(2) ?? '0') ?? 0;
+      final period = en12Match.group(3)!.toLowerCase();
+      if (period == 'pm' && hour < 12) hour += 12;
+      if (period == 'am' && hour == 12) hour = 0;
+      return (hour: hour, minute: minute);
+    }
+
+    // 24h: "at 14:30", "at 9:00"
+    final en24 = RegExp(r'at\s+(\d{1,2}):(\d{2})');
+    final en24Match = en24.firstMatch(text);
+    if (en24Match != null) {
+      final hour = int.parse(en24Match.group(1)!);
+      final minute = int.parse(en24Match.group(2)!);
+      if (hour < 24 && minute < 60) return (hour: hour, minute: minute);
+    }
+
+    // الأنماط العربية: "الساعة 5 مساءً", "الساعة 9:30 صباحاً"
+    final arTime = RegExp(
+      r'الساعة\s+(\d{1,2})(?::(\d{2}))?\s*(مساءً|مساء|صباحاً|صباح|ليلاً|ليل|ظهراً|ظهر)?',
+    );
+    final arMatch = arTime.firstMatch(text);
+    if (arMatch != null) {
+      int hour = int.parse(arMatch.group(1)!);
+      final minute = int.tryParse(arMatch.group(2) ?? '0') ?? 0;
+      final period = arMatch.group(3) ?? '';
+      if ((period.contains('مساء') || period.contains('ليل')) && hour < 12) {
+        hour += 12;
+      }
+      if (period.contains('ظهر') && hour < 12) hour = 12;
+      if (hour < 24 && minute < 60) return (hour: hour, minute: minute);
+    }
+
+    return null;
+  }
+
+  /// استخراج التاريخ (والوقت إن ذُكر) من النص
+  ///
   /// يتعرف على كلمات مثل: غداً، بعد غد، الأسبوع القادم
   /// وأيضاً يتعرف على التواريخ بصيغة DD/MM
-  /// 
+  /// ويدمج الوقت المستخرج تلقائياً في DateTime المُرجعة
+  ///
   /// [text] النص بأحرف صغيرة
   /// Returns: DateTime إذا تم التعرف على تاريخ، null إذا لم يتم
   DateTime? _extractDate(String text) {
     final now = DateTime.now();
-    
-    // كلمات التاريخ العربية
+    DateTime? date;
+
+    // كلمات التاريخ العربية والإنجليزية
     if (text.contains('غداً') || text.contains('غدا') || text.contains('tomorrow')) {
-      return now.add(const Duration(days: 1));
+      date = now.add(const Duration(days: 1));
+    } else if (text.contains('بعد غد') || text.contains('day after tomorrow')) {
+      date = now.add(const Duration(days: 2));
+    } else if (text.contains('الأسبوع القادم') || text.contains('next week')) {
+      date = now.add(const Duration(days: 7));
+    } else if (text.contains('الشهر القادم') || text.contains('next month')) {
+      date = DateTime(now.year, now.month + 1, now.day);
+    } else if (text.contains('اليوم') || text.contains('today')) {
+      date = now;
+    } else {
+      // البحث عن أرقام التواريخ DD/MM أو DD-MM
+      final dateRegex = RegExp(r'(\d{1,2})[\/\-](\d{1,2})');
+      final match = dateRegex.firstMatch(text);
+      if (match != null) {
+        final day = int.parse(match.group(1)!);
+        final month = int.parse(match.group(2)!);
+        date = DateTime(now.year, month, day);
+      }
     }
-    
-    if (text.contains('بعد غد') || text.contains('day after tomorrow')) {
-      return now.add(const Duration(days: 2));
+
+    if (date == null) return null;
+
+    // دمج الوقت المستخرج إن وُجد
+    final time = _extractTime(text);
+    if (time != null) {
+      return DateTime(date.year, date.month, date.day, time.hour, time.minute);
     }
-    
-    if (text.contains('الأسبوع القادم') || text.contains('next week')) {
-      return now.add(const Duration(days: 7));
-    }
-    
-    if (text.contains('الشهر القادم') || text.contains('next month')) {
-      return DateTime(now.year, now.month + 1, now.day);
-    }
-    
-    // البحث عن أرقام التواريخ
-    final dateRegex = RegExp(r'(\d{1,2})[\/\-](\d{1,2})');
-    final match = dateRegex.firstMatch(text);
-    if (match != null) {
-      final day = int.parse(match.group(1)!);
-      final month = int.parse(match.group(2)!);
-      return DateTime(now.year, month, day);
-    }
-    
-    return null;
+
+    return DateTime(date.year, date.month, date.day);
   }
 
   /// تقدير مدة المهمة بالدقائق

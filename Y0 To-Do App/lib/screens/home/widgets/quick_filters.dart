@@ -75,6 +75,7 @@ class QuickFilters extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentFilter = ref.watch(taskFilterProvider);
+    final allTags = ref.watch(allTagsProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,6 +124,7 @@ class QuickFilters extends ConsumerWidget {
               _buildCategoryFilterButton(context, TaskCategory.general, currentFilter.categories, ref),
               _buildCategoryFilterButton(context, TaskCategory.shopping, currentFilter.categories, ref),
               _buildCategoryFilterButton(context, TaskCategory.entertainment, currentFilter.categories, ref),
+              ...allTags.map((tag) => _buildTagFilterButton(context, tag, currentFilter.tags, ref)),
             ],
           ),
         ),
@@ -464,6 +466,49 @@ class QuickFilters extends ConsumerWidget {
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTagFilterButton(BuildContext context, String tag, Set<String> activeTags, WidgetRef ref) {
+    final isActive = activeTags.contains(tag);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: NeoMorphicCard(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Y0DesignSystem.spacing2,
+          vertical: Y0DesignSystem.spacing2 / 2,
+        ),
+        borderRadius: BorderRadius.circular(50),
+        color: isActive 
+            ? context.colorScheme.primary 
+            : context.colorScheme.surfaceContainerLow,
+        onTap: () {
+          ref.read(taskFilterProvider.notifier).update((f) => f.toggleTag(tag));
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.tag,
+              size: 14,
+              color: isActive 
+                  ? context.colorScheme.onPrimary 
+                  : context.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '#$tag',
+              style: context.textTheme.labelSmall?.copyWith(
+                color: isActive 
+                    ? context.colorScheme.onPrimary 
+                    : context.colorScheme.onSurfaceVariant,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
           ],

@@ -16,6 +16,7 @@ import '../widgets/statistics/quick_stats_cards.dart';
 import '../widgets/statistics/weekly_productivity_chart.dart';
 import '../widgets/statistics/achievement_badges.dart';
 import '../widgets/statistics/archive_summary_card.dart';
+import '../widgets/app_logo.dart';
 
 /// 📊 Y0 To-Do App - Statistics Screen
 class StatisticsScreen extends ConsumerStatefulWidget {
@@ -90,17 +91,13 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         horizontal: Y0DesignSystem.spacing3,
         vertical: Y0DesignSystem.spacing2,
       ),
-      child: Row(
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            context.l10n.appTitle,
-            style: context.textTheme.headlineSmall?.copyWith(
-              color: isDark 
-                  ? const Color(0xFF66bb6a)
-                  : context.colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
+          AppBrandHeader(
+            logoSize: 34.0,
+            showTitle: true,
+            showVersionBadge: true,
           ),
         ],
       ),

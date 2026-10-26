@@ -33,5 +33,51 @@ void main() {
       expect(analysis.score, 0);
       expect(analysis.suggestions, isNotEmpty);
     });
+
+    // ── v3.5.0: Deep NLP Time & Date Extraction Tests ─────────────────────
+
+    test('NLP extracts Arabic time and tomorrow date correctly', () {
+      final analysis = AIService().analyzeTaskText('اجتماع الفريق غداً الساعة 5 مساءً عاجل');
+
+      expect(analysis.priority, 2); // عاجل -> high priority
+      expect(analysis.dueDate, isNotNull);
+      expect(analysis.dueDate!.hour, 17); // 5 PM -> 17:00
+      expect(analysis.dueDate!.minute, 0);
+    });
+
+    test('NLP extracts Arabic morning time correctly', () {
+      final analysis = AIService().analyzeTaskText('تسليم التقرير اليوم الساعة 9:30 صباحاً ضروري');
+
+      expect(analysis.priority, 2); // ضروري -> high priority
+      expect(analysis.dueDate, isNotNull);
+      expect(analysis.dueDate!.hour, 9);
+      expect(analysis.dueDate!.minute, 30);
+    });
+
+    test('NLP extracts English 12h time and date correctly', () {
+      final analysis = AIService().analyzeTaskText('Team sync tomorrow at 3:15pm urgent');
+
+      expect(analysis.priority, 2); // urgent -> high priority
+      expect(analysis.dueDate, isNotNull);
+      expect(analysis.dueDate!.hour, 15);
+      expect(analysis.dueDate!.minute, 15);
+    });
+
+    test('NLP extracts English 24h time correctly', () {
+      final analysis = AIService().analyzeTaskText('Project review next week at 14:00 important');
+
+      expect(analysis.priority, 2); // important -> high priority
+      expect(analysis.dueDate, isNotNull);
+      expect(analysis.dueDate!.hour, 14);
+      expect(analysis.dueDate!.minute, 0);
+    });
+
+    test('NLP handles text without time as standard date', () {
+      final analysis = AIService().analyzeTaskText('مهمة عادية غداً');
+
+      expect(analysis.dueDate, isNotNull);
+      expect(analysis.dueDate!.hour, 0);
+      expect(analysis.dueDate!.minute, 0);
+    });
   });
 }

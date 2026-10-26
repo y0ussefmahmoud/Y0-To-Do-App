@@ -20,7 +20,7 @@ import '../theme/y0_design_system.dart';
 /// - RTL-optimized layouts
 /// - Smooth micro-interactions
 /// 
-/// @author Y0 Development Team
+/// @author Y0 Tech Solutions
 /// @version 2.4.0
 class Y0NeoMorphicComponents {
   Y0NeoMorphicComponents._(); // Private constructor

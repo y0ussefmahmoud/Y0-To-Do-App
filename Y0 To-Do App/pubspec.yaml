@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 3.4.0+1
+version: 1.0.12+1
 
 environment:
   sdk: ^3.5.3
@@ -69,6 +69,7 @@ dependencies:
   shimmer: ^3.0.0  # للـ Skeleton screens
   lottie: ^3.0.0  # للـ Animated illustrations في Empty states
   share_plus: ^7.2.1  # للـ Backup sharing
+  quick_actions: ^1.0.7  # للـ App launcher shortcuts
 
   # Security — Encryption & App Lock
   flutter_secure_storage: ^9.2.2  # للـ Secure AES key storage (Android Keystore / iOS Keychain)
@@ -106,6 +107,7 @@ flutter:
   assets:
     - assets/animations/
     - fonts/
+    - android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

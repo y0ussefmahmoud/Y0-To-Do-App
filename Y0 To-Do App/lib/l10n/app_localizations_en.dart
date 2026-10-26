@@ -389,7 +389,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutAppLabel => 'App Information';
 
   @override
-  String get aboutAppSubtitle => 'Y0 To-Do App v3.4.0';
+  String get aboutAppSubtitle => 'Y0 To-Do App v1.0.12';
 
   @override
   String get aboutAppDescription =>
@@ -575,4 +575,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionComplete => 'Complete Task';
+
+  @override
+  String get pickDueTimeLabel => 'Set Time';
+
+  @override
+  String dueTimePrefix(String time) {
+    return 'Time: $time';
+  }
+
+  @override
+  String get clearTimeTooltip => 'Clear scheduled time';
+
+  @override
+  String get clearDateTooltip => 'Clear scheduled date';
+
+  @override
+  String get tagsLabel => 'Tags';
+
+  @override
+  String get tagsHint => 'Add a tag and press Enter...';
+
+  @override
+  String get tagsFilterTitle => 'Filter by Tags';
+
+  @override
+  String get noTagsMessage => 'No tags available';
+
+  @override
+  String get tagAdded => 'Tag added';
+
+  @override
+  String get tagRemoved => 'Tag removed';
 }

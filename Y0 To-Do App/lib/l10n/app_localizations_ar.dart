@@ -382,7 +382,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get aboutAppLabel => 'معلومات التطبيق';
 
   @override
-  String get aboutAppSubtitle => 'Y0 To-Do App v3.4.0';
+  String get aboutAppSubtitle => 'Y0 To-Do App v1.0.12';
 
   @override
   String get aboutAppDescription =>
@@ -568,4 +568,36 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get actionComplete => 'إكمال المهمة';
+
+  @override
+  String get pickDueTimeLabel => 'تحديد الوقت';
+
+  @override
+  String dueTimePrefix(String time) {
+    return 'الوقت: $time';
+  }
+
+  @override
+  String get clearTimeTooltip => 'إلغاء الوقت المحدد';
+
+  @override
+  String get clearDateTooltip => 'إلغاء التاريخ المحدد';
+
+  @override
+  String get tagsLabel => 'الوسوم';
+
+  @override
+  String get tagsHint => 'أضف وسماً واضغط Enter...';
+
+  @override
+  String get tagsFilterTitle => 'فلترة بالوسوم';
+
+  @override
+  String get noTagsMessage => 'لا توجد وسوم';
+
+  @override
+  String get tagAdded => 'تمت إضافة الوسم';
+
+  @override
+  String get tagRemoved => 'تم حذف الوسم';
 }
